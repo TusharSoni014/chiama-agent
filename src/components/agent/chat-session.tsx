@@ -1,105 +1,55 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { DefaultChatTransport, type UIMessage } from "ai";
-import { useChat } from "@ai-sdk/react";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import { ChatMessageItem } from "./chat-message-item";
-import { ChatEmptyState } from "./chat-empty-state";
-import { ChatInput } from "./chat-input";
+import { useThreadHistory } from "@/hooks/use-thread-history";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChatConversation } from "./chat-conversation";
+import { ChatErrorAlert } from "./chat-error-alert";
+import type { ActiveChat } from "./types";
 
 interface ChatSessionProps {
-  threadId: string | null;
-  onThreadActivity?: () => void;
+  chat: ActiveChat;
+  onMessageSent: (text: string) => void;
+  onTurnFinished: () => void;
 }
 
-export const ChatSession = ({
-  threadId,
-  onThreadActivity,
-}: ChatSessionProps) => {
-  const [input, setInput] = useState("");
+/**
+ * Loads a conversation's saved messages before handing over to the live chat.
+ * Mount it with `key={chat.id}` so every conversation starts from a clean state.
+ */
+export function ChatSession({
+  chat,
+  onMessageSent,
+  onTurnFinished,
+}: ChatSessionProps) {
+  const history = useThreadHistory(chat.id, chat.isDraft);
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: "/api/chat",
-        body: threadId ? { threadId } : undefined,
-      }),
-    [threadId]
-  );
+  if (history.status === "loading") {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6">
+        <Skeleton className="ml-auto h-10 w-2/5" />
+        <Skeleton className="h-20 w-4/5" />
+        <Skeleton className="ml-auto h-10 w-1/3" />
+      </div>
+    );
+  }
 
-  const { messages, setMessages, sendMessage, status, stop } = useChat({
-    transport,
-  });
-
-  const isBusy = status === "submitted" || status === "streaming";
-
-  useEffect(() => {
-    if (!threadId) {
-      setMessages([]);
-      return;
-    }
-
-    const loadHistory = async () => {
-      try {
-        const res = await fetch(`/api/chat?threadId=${encodeURIComponent(threadId)}`);
-        if (!res.ok) return;
-        const data: UIMessage[] = await res.json();
-        setMessages(data);
-      } catch (err) {
-        console.error("Failed to load thread history:", err);
-      }
-    };
-
-    loadHistory();
-  }, [threadId, setMessages]);
-
-  const handleSubmit = useCallback(async () => {
-    const text = input.trim();
-    if (!text || isBusy) return;
-
-    sendMessage({ text });
-    setInput("");
-    onThreadActivity?.();
-  }, [input, isBusy, sendMessage, onThreadActivity]);
-
-  const handleSelectSuggestion = useCallback(
-    (promptText: string) => {
-      if (isBusy) return;
-      sendMessage({ text: promptText });
-      onThreadActivity?.();
-    },
-    [isBusy, sendMessage, onThreadActivity]
-  );
+  if (history.status === "error") {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-6">
+        <ChatErrorAlert
+          title="Could not open this conversation"
+          error={new Error(history.message)}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 relative">
-      <div className="flex-1 overflow-y-auto px-4 py-2">
-        {messages.length === 0 ? (
-          <ChatEmptyState onSelectSuggestion={handleSelectSuggestion} />
-        ) : (
-          <Conversation className="max-w-3xl mx-auto h-full">
-            <ConversationContent>
-              {messages.map((message) => (
-                <ChatMessageItem key={message.id} message={message} />
-              ))}
-              <ConversationScrollButton />
-            </ConversationContent>
-          </Conversation>
-        )}
-      </div>
-
-      <ChatInput
-        input={input}
-        onInputChange={setInput}
-        onSubmit={handleSubmit}
-        onStop={stop}
-        isBusy={isBusy}
-      />
-    </div>
+    <ChatConversation
+      threadId={chat.id}
+      initialMessages={history.messages}
+      onMessageSent={onMessageSent}
+      onTurnFinished={onTurnFinished}
+    />
   );
-};
+}

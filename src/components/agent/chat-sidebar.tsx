@@ -1,165 +1,138 @@
 "use client";
 
 import { memo } from "react";
-import { Plus, MessageSquare, Trash2, PanelLeftClose, Bot, LogOut } from "lucide-react";
-import { useSession, signOut, signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { ChatSidebarUser } from "./chat-sidebar-user";
 import type { ChatThread } from "./types";
 
+// Fixed widths (not random) so server and client render the same markup.
+const SKELETON_WIDTHS = ["w-4/5", "w-3/5", "w-11/12", "w-2/3"];
+
 interface ChatSidebarProps {
-  isOpen: boolean;
-  onToggle: () => void;
   threads: ChatThread[];
-  activeThreadId: string | null;
+  isLoading: boolean;
+  error: string | null;
+  activeThreadId: string;
   onSelectThread: (threadId: string) => void;
   onNewChat: () => void;
-  onDeleteThread: (threadId: string) => void;
+  onRequestDelete: (thread: ChatThread) => void;
 }
 
 export const ChatSidebar = memo(
   ({
-    isOpen,
-    onToggle,
     threads,
+    isLoading,
+    error,
     activeThreadId,
     onSelectThread,
     onNewChat,
-    onDeleteThread,
+    onRequestDelete,
   }: ChatSidebarProps) => {
-    const { data: session } = useSession();
+    const { isMobile, setOpenMobile } = useSidebar();
 
-    if (!isOpen) {
-      return null;
-    }
+    const closeOnMobile = () => {
+      if (isMobile) setOpenMobile(false);
+    };
 
     return (
-      <aside className="w-72 h-full flex flex-col border-r bg-sidebar text-sidebar-foreground border-sidebar-border transition-all duration-300 shrink-0">
-        <div className="flex items-center justify-between p-3 border-b border-sidebar-border">
-          <div className="flex items-center gap-2 px-1">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Bot className="size-4" />
-            </div>
-            <span className="font-semibold text-sm tracking-tight">Chiama Chat</span>
+      <Sidebar collapsible="offcanvas">
+        <SidebarHeader className="gap-3 p-3">
+          <div className="flex items-center gap-2.5 px-1">
+            <Avatar className="size-7">
+              <AvatarImage src="/chiama.png" alt="Chiama" />
+              <AvatarFallback>C</AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-semibold tracking-tight">
+              Chiama Agent
+            </span>
           </div>
           <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onToggle}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Close sidebar"
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => {
+              onNewChat();
+              closeOnMobile();
+            }}
           >
-            <PanelLeftClose className="size-4" />
+            <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
+            New chat
           </Button>
-        </div>
+        </SidebarHeader>
 
-        <div className="p-3">
-          <Button
-            onClick={onNewChat}
-            variant="secondary"
-            className="w-full justify-start gap-2 shadow-xs font-medium"
-          >
-            <Plus className="size-4" />
-            <span>New Chat</span>
-          </Button>
-        </div>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Conversations</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {isLoading &&
+                  SKELETON_WIDTHS.map((width) => (
+                    <SidebarMenuItem key={width}>
+                      <Skeleton className={cn("my-1.5 h-5", width)} />
+                    </SidebarMenuItem>
+                  ))}
 
-        <div className="flex-1 min-h-0 px-2">
-          <div className="px-2 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            History
-          </div>
-          <ScrollArea className="h-[calc(100%-1.5rem)] pr-2">
-            <div className="space-y-1 py-1">
-              {threads.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-2 py-4 text-center">
-                  No conversation history yet
-                </p>
-              ) : (
-                threads.map((thread) => {
-                  const isActive = activeThreadId === thread.id;
-                  const displayTitle =
-                    thread.title && thread.title.trim().length > 0
-                      ? thread.title
-                      : `Chat ${thread.id.slice(0, 8)}`;
+                {!isLoading && error && (
+                  <li className="px-3 py-2 text-xs text-destructive">{error}</li>
+                )}
+
+                {!isLoading && !error && threads.length === 0 && (
+                  <li className="px-3 py-2 text-xs text-muted-foreground">
+                    No conversations yet.
+                  </li>
+                )}
+
+                {threads.map((thread) => {
+                  const title = thread.title?.trim() || "Untitled chat";
 
                   return (
-                    <div
-                      key={thread.id}
-                      className={cn(
-                        "group flex items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-colors cursor-pointer",
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                          : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
-                      )}
-                      onClick={() => onSelectThread(thread.id)}
-                    >
-                      <div className="flex items-center gap-2 truncate flex-1 min-w-0">
-                        <MessageSquare className="size-3.5 shrink-0" />
-                        <span className="truncate">{displayTitle}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0 ml-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteThread(thread.id);
+                    <SidebarMenuItem key={thread.id}>
+                      <SidebarMenuButton
+                        isActive={thread.id === activeThreadId}
+                        onClick={() => {
+                          onSelectThread(thread.id);
+                          closeOnMobile();
                         }}
-                        aria-label="Delete chat"
                       >
-                        <Trash2 className="size-3" />
-                      </Button>
-                    </div>
+                        <span>{title}</span>
+                      </SidebarMenuButton>
+                      <SidebarMenuAction
+                        showOnHover
+                        aria-label={`Delete conversation: ${title}`}
+                        onClick={() => onRequestDelete(thread)}
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} />
+                      </SidebarMenuAction>
+                    </SidebarMenuItem>
                   );
-                })
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-        <div className="p-3 border-t border-sidebar-border mt-auto">
-          {session?.user ? (
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <Avatar className="size-7">
-                  <AvatarImage src={session.user.image ?? undefined} />
-                  <AvatarFallback className="text-xs">
-                    {session.user.name?.[0] ?? "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="truncate text-xs">
-                  <p className="font-medium truncate leading-tight">
-                    {session.user.name ?? "User"}
-                  </p>
-                  <p className="text-muted-foreground truncate text-[10px]">
-                    {session.user.email ?? session.user.id}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => signOut()}
-                className="text-muted-foreground hover:text-foreground shrink-0"
-                title="Sign out"
-              >
-                <LogOut className="size-3.5" />
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-xs"
-              onClick={() => signIn("google")}
-            >
-              Sign In with Google
-            </Button>
-          )}
-        </div>
-      </aside>
+        <SidebarFooter className="border-t border-sidebar-border p-3">
+          <ChatSidebarUser />
+        </SidebarFooter>
+      </Sidebar>
     );
   }
 );

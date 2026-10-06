@@ -1,56 +1,36 @@
 "use client";
 
 import { memo } from "react";
-import { PanelLeft, Plus, Sparkles } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 
 interface ChatHeaderProps {
-  isSidebarOpen: boolean;
-  onToggleSidebar: () => void;
   onNewChat: () => void;
 }
 
-export const ChatHeader = memo(
-  ({ isSidebarOpen, onToggleSidebar, onNewChat }: ChatHeaderProps) => {
-    return (
-      <header className="h-13 shrink-0 flex items-center justify-between border-b px-4 bg-background/95 backdrop-blur-xs sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          {!isSidebarOpen && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onToggleSidebar}
-              aria-label="Open sidebar"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <PanelLeft className="size-4" />
-            </Button>
-          )}
+export const ChatHeader = memo(({ onNewChat }: ChatHeaderProps) => {
+  const { state, isMobile } = useSidebar();
+  const showNewChat = isMobile || state === "collapsed";
 
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">Weather Agent</span>
-            <Badge variant="secondary" className="gap-1 text-[11px] font-normal py-0">
-              <Sparkles className="size-2.5 text-primary" />
-              <span>Mastra Powered</span>
-            </Badge>
-          </div>
-        </div>
+  return (
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <SidebarTrigger />
+        <Separator orientation="vertical" className="h-4" />
+        <h1 className="truncate text-sm font-medium">Weather Agent</h1>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onNewChat}
-            className="gap-1.5 text-xs h-8"
-          >
-            <Plus className="size-3.5" />
-            <span>New Chat</span>
-          </Button>
-        </div>
-      </header>
-    );
-  }
-);
+      {showNewChat && (
+        <Button variant="outline" size="sm" onClick={onNewChat}>
+          <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
+          New chat
+        </Button>
+      )}
+    </header>
+  );
+});
 
 ChatHeader.displayName = "ChatHeader";
