@@ -56,10 +56,14 @@ export const useVoiceSelector = () => {
   return context;
 };
 
-export type VoiceSelectorProps = ComponentProps<typeof Dialog> & {
+export type VoiceSelectorProps = Omit<
+  ComponentProps<typeof Dialog>,
+  "onOpenChange"
+> & {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string | undefined) => void;
+  onOpenChange?: (open: boolean, eventDetails?: any) => void;
 };
 
 export const VoiceSelector = ({
@@ -80,7 +84,7 @@ export const VoiceSelector = ({
 
   const [open, setOpen] = useControllableState({
     defaultProp: defaultOpen,
-    onChange: onOpenChange,
+    onChange: (open) => onOpenChange?.(open),
     prop: openProp,
   });
 

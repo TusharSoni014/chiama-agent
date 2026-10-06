@@ -1,15 +1,44 @@
 "use client"
 
+import * as React from "react"
 import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card"
 import { cn } from "cn"
 
-function HoverCard({ ...props }: PreviewCardPrimitive.Root.Props) {
-  return <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />
+interface HoverCardContextValue {
+  openDelay?: number
+  closeDelay?: number
 }
 
-function HoverCardTrigger({ ...props }: PreviewCardPrimitive.Trigger.Props) {
+const HoverCardContext = React.createContext<HoverCardContextValue>({})
+
+function HoverCard({
+  openDelay,
+  closeDelay,
+  ...props
+}: PreviewCardPrimitive.Root.Props & {
+  openDelay?: number
+  closeDelay?: number
+}) {
   return (
-    <PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
+    <HoverCardContext.Provider value={{ openDelay, closeDelay }}>
+      <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />
+    </HoverCardContext.Provider>
+  )
+}
+
+function HoverCardTrigger({
+  delay,
+  closeDelay,
+  ...props
+}: PreviewCardPrimitive.Trigger.Props) {
+  const ctx = React.useContext(HoverCardContext)
+  return (
+    <PreviewCardPrimitive.Trigger
+      delay={delay ?? ctx.openDelay}
+      closeDelay={closeDelay ?? ctx.closeDelay}
+      data-slot="hover-card-trigger"
+      {...props}
+    />
   )
 }
 
