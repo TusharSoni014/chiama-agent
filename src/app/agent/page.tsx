@@ -1,122 +1,95 @@
 "use client";
 
-import "@/app/globals.css";
-import { useEffect, useState } from "react";
-import { DefaultChatTransport, ToolUIPart } from "ai";
-import { useChat } from "@ai-sdk/react";
+import { useEffect, useState, useCallback } from "react";
+import { ChatSidebar } from "@/components/agent/chat-sidebar";
+import { ChatHeader } from "@/components/agent/chat-header";
+import { ChatSession } from "@/components/agent/chat-session";
+import type { ChatThread } from "@/components/agent/types";
 
-import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
+export default function AgentPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
-
-import {
-  Tool,
-  ToolHeader,
-  ToolContent,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool";
-
-function Chat() {
-  const [input, setInput] = useState<string>("");
-
-  const { messages, setMessages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-    }),
-  });
+  const fetchThreads = useCallback(async () => {
+    try {
+      const res = await fetch("/api/chat/threads");
+      if (!res.ok) return;
+      const data: ChatThread[] = await res.json();
+      setThreads(data);
+      return data;
+    } catch (err) {
+      console.error("Failed to fetch threads:", err);
+      return [];
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      const res = await fetch("/api/chat");
-      const data = await res.json();
-      setMessages([...data]);
-    };
-    fetchMessages();
-  }, [setMessages]);
+    fetchThreads().then((initialThreads) => {
+      if (initialThreads && initialThreads.length > 0) {
+        setActiveThreadId(initialThreads[0].id);
+      }
+    });
+  }, [fetchThreads]);
 
-  const handleSubmit = async () => {
-    if (!input.trim()) return;
+  const handleNewChat = useCallback(() => {
+    const newId = crypto.randomUUID();
+    setActiveThreadId(newId);
+  }, []);
 
-    sendMessage({ text: input });
-    setInput("");
-  };
+  const handleSelectThread = useCallback((threadId: string) => {
+    setActiveThreadId(threadId);
+  }, []);
+
+  const handleDeleteThread = useCallback(
+    async (threadId: string) => {
+      try {
+        const res = await fetch(
+          `/api/chat/threads?threadId=${encodeURIComponent(threadId)}`,
+          { method: "DELETE" }
+        );
+        if (!res.ok) return;
+
+        setThreads((prev) => prev.filter((t) => t.id !== threadId));
+        if (activeThreadId === threadId) {
+          handleNewChat();
+        }
+      } catch (err) {
+        console.error("Failed to delete thread:", err);
+      }
+    },
+    [activeThreadId, handleNewChat]
+  );
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
 
   return (
-    <div className="relative size-full h-screen w-full p-6">
-      <div className="flex h-full flex-col">
-        <Conversation className="h-full">
-          <ConversationContent>
-            {messages.map((message) => (
-              <div key={message.id}>
-                {message.parts?.map((part, i) => {
-                  if (part.type === "text") {
-                    return (
-                      <Message key={`${message.id}-${i}`} from={message.role}>
-                        <MessageContent>
-                          <MessageResponse>{part.text}</MessageResponse>
-                        </MessageContent>
-                      </Message>
-                    );
-                  }
+    <div className="flex h-dvh w-full overflow-hidden bg-background">
+      <ChatSidebar
+        isOpen={isSidebarOpen}
+        onToggle={handleToggleSidebar}
+        threads={threads}
+        activeThreadId={activeThreadId}
+        onSelectThread={handleSelectThread}
+        onNewChat={handleNewChat}
+        onDeleteThread={handleDeleteThread}
+      />
 
-                  if (part.type?.startsWith("tool-")) {
-                    return (
-                      <Tool key={`${message.id}-${i}`}>
-                        <ToolHeader
-                          type={(part as ToolUIPart).type}
-                          state={
-                            (part as ToolUIPart).state || "output-available"
-                          }
-                          className="cursor-pointer"
-                        />
-                        <ToolContent>
-                          <ToolInput input={(part as ToolUIPart).input || {}} />
-                          <ToolOutput
-                            output={(part as ToolUIPart).output}
-                            errorText={(part as ToolUIPart).errorText}
-                          />
-                        </ToolContent>
-                      </Tool>
-                    );
-                  }
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <ChatHeader
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={handleToggleSidebar}
+          onNewChat={handleNewChat}
+        />
 
-                  return null;
-                })}
-              </div>
-            ))}
-            <ConversationScrollButton />
-          </ConversationContent>
-        </Conversation>
-
-        <PromptInput onSubmit={handleSubmit} className="mt-20">
-          <PromptInputBody>
-            <PromptInputTextarea
-              onChange={(e) => setInput(e.target.value)}
-              className="md:leading-10"
-              value={input}
-              placeholder="Type your message..."
-              disabled={status !== "ready"}
-            />
-          </PromptInputBody>
-        </PromptInput>
-      </div>
+        <ChatSession
+          key={activeThreadId ?? "new-chat"}
+          threadId={activeThreadId}
+          onThreadActivity={fetchThreads}
+        />
+      </main>
     </div>
   );
 }
-
-export default Chat;

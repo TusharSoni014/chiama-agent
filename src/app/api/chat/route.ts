@@ -9,9 +9,15 @@ const DEFAULT_RESOURCE = "weather-chat";
 
 export async function POST(req: Request) {
   const session = await auth();
-  const threadId = session?.user?.id ?? "example-user-id";
-
+  const resourceId = session?.user?.id ?? DEFAULT_RESOURCE;
   const params = await req.json();
+
+  const targetThreadId =
+    params.threadId ??
+    params.memory?.thread ??
+    session?.user?.id ??
+    "example-user-id";
+
   const stream = await handleChatStream({
     mastra,
     agentId: "weather-agent",
@@ -20,25 +26,28 @@ export async function POST(req: Request) {
       ...params,
       memory: {
         ...params.memory,
-        thread: threadId,
-        resource: DEFAULT_RESOURCE,
+        thread: targetThreadId,
+        resource: resourceId,
       },
     },
   });
   return createUIMessageStreamResponse({ stream });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth();
-  const threadId = session?.user?.id ?? "example-user-id";
+  const resourceId = session?.user?.id ?? DEFAULT_RESOURCE;
+  const { searchParams } = new URL(req.url);
+  const targetThreadId =
+    searchParams.get("threadId") ?? session?.user?.id ?? "example-user-id";
 
   const memory = await mastra.getAgentById("weather-agent").getMemory();
   let response = null;
 
   try {
     response = await memory?.recall({
-      threadId,
-      resourceId: DEFAULT_RESOURCE,
+      threadId: targetThreadId,
+      resourceId,
     });
   } catch {
     console.log("No previous messages found.");
