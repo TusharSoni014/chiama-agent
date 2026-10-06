@@ -19,8 +19,6 @@ export const ChatHeader = memo(({ onNewChat }: ChatHeaderProps) => {
     <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4">
       <div className="flex min-w-0 items-center gap-3">
         <SidebarTrigger />
-        <Separator orientation="vertical" className="h-4" />
-        <h1 className="truncate text-sm font-medium">Weather Agent</h1>
       </div>
 
       {showNewChat && (

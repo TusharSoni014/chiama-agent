@@ -7,8 +7,8 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupTextarea,
 } from "@/components/ui/input-group";
+import { AutoGrowTextarea } from "./auto-grow-textarea";
 
 interface ChatInputProps {
   value: string;
@@ -41,18 +41,16 @@ export const ChatInput = memo(
 
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-4">
-        <InputGroup>
-          <InputGroupTextarea
+        <InputGroup className="h-auto">
+          <AutoGrowTextarea
             autoFocus
             value={value}
             onChange={(event) => onValueChange(event.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             aria-label="Message"
-            rows={1}
-            className="max-h-48 min-h-12"
           />
-          <InputGroupAddon align="inline-end" className="self-end pb-2">
+          <InputGroupAddon align="inline-end" className="self-end py-1.5">
             {isBusy ? (
               <InputGroupButton
                 size="icon-sm"
