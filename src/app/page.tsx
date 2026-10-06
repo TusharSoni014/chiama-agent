@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -6,9 +7,17 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 max-w-7xl mx-auto w-full space-y-12 sm:space-y-16">
         <div className="w-full max-w-3xl text-center space-y-4 pt-4 sm:pt-6">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-zinc-100 max-w-2xl mx-auto leading-[1.15]">
-            Chiama Weather Agent
-          </h1>
+          <div className="flex justify-center items-center gap-3">
+            <Image
+              src="/chiama.png"
+              height={100}
+              width={100}
+              alt="Chiama.png"
+            />
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-zinc-100 max-w-2xl leading-[1.15]">
+              Chiama Weather Agent
+            </h1>
+          </div>
           <h1 className="text-xl sm:text-5xl lg:text-4xl font-light tracking-tight text-zinc-100 max-w-2xl mx-auto leading-[1.15]">
             Atmospheric intelligence, <br className="hidden sm:inline" />
             <span className="font-normal text-white">spoken in real time.</span>

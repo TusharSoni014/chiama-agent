@@ -8,7 +8,8 @@ import { ChatDeleteDialog } from "./chat-delete-dialog";
 import { ChatHeader } from "./chat-header";
 import { ChatSession } from "./chat-session";
 import { ChatSidebar } from "./chat-sidebar";
-import type { ActiveChat, ChatThread } from "./types";
+import { CallScreen } from "./call/call-screen";
+import type { ActiveChat, AgentView, ChatThread } from "./types";
 
 const createDraftChat = (): ActiveChat => ({
   id: crypto.randomUUID(),
@@ -21,17 +22,28 @@ export function AgentWorkspace() {
 
   // Always start on a fresh draft so there is a valid thread id before the first message.
   const [activeChat, setActiveChat] = useState<ActiveChat>(createDraftChat);
+  const [view, setView] = useState<AgentView>("chat");
   const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const activeChatId = activeChat.id;
 
+  // A saved call adds messages behind the hidden chat, so reopen it from the server.
+  const [chatRevision, setChatRevision] = useState(0);
+  const handleCallSaved = useCallback(() => {
+    setActiveChat((prev) => (prev.isDraft ? { ...prev, isDraft: false } : prev));
+    setChatRevision((revision) => revision + 1);
+    void refresh();
+  }, [refresh]);
+
   const handleNewChat = useCallback(() => {
+    setView("chat");
     setActiveChat(createDraftChat());
   }, []);
 
   const handleSelectThread = useCallback((threadId: string) => {
+    setView("chat");
     setActiveChat((prev) =>
       prev.id === threadId ? prev : { id: threadId, isDraft: false }
     );
@@ -88,13 +100,30 @@ export function AgentWorkspace() {
       />
 
       <SidebarInset className="h-svh min-w-0 overflow-hidden">
-        <ChatHeader onNewChat={handleNewChat} />
-        <ChatSession
-          key={activeChatId}
-          chat={activeChat}
-          onMessageSent={handleMessageSent}
-          onTurnFinished={refresh}
+        <ChatHeader
+          view={view}
+          onNewChat={handleNewChat}
+          onViewChange={setView}
         />
+
+        {/* Stays mounted behind the call so an in-flight reply is not lost. */}
+        <div
+          className={view === "chat" ? "flex min-h-0 flex-1 flex-col" : "hidden"}
+        >
+          <ChatSession
+            key={`${activeChatId}:${chatRevision}`}
+            chat={activeChat}
+            onMessageSent={handleMessageSent}
+            onTurnFinished={refresh}
+          />
+        </div>
+
+        {view === "call" && (
+          <CallScreen
+            threadId={activeChatId}
+            onTranscriptSaved={handleCallSaved}
+          />
+        )}
       </SidebarInset>
 
       <ChatDeleteDialog

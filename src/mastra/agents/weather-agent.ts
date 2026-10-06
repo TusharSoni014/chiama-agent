@@ -1,13 +1,10 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { weatherTool } from "../tools/weather-tool";
-import { lmStudioModel } from "../modelConfig";
-import { createGeminiLiveVoice } from "../voice/gemini-live";
+import { textModel } from "../modelConfig";
 
-export const weatherAgent = new Agent({
-  id: "weather-agent",
-  name: "Weather Agent",
-  instructions: `You are a helpful weather assistant that provides accurate weather information and can help planning activities based on the weather.
+/** Shared by the text agent below and the per-call voice agent (server/voice-agent.ts). */
+export const weatherAgentInstructions = `You are a helpful weather assistant that provides accurate weather information and can help planning activities based on the weather.
 
 Your primary function is to help users get weather details for specific locations. When responding:
 - Always ask for a location if none is provided
@@ -18,11 +15,16 @@ Your primary function is to help users get weather details for specific location
 - If the user asks for activities and provides the weather forecast, suggest activities based on the weather forecast.
 - If the user asks for activities, respond in the format they request.
 
-Use the weatherTool to fetch current weather data.`,
-  // LLM Brain (LM Studio local model):
-  model: lmStudioModel,
-  tools: { weatherTool },
+Use the weatherTool to fetch current weather data.`;
+
+export const weatherAgentTools = { weatherTool };
+
+export const weatherAgent = new Agent({
+  id: "weather-agent",
+  name: "Weather Agent",
+  instructions: weatherAgentInstructions,
+  // LLM Brain (OpenRouter free router):
+  model: textModel,
+  tools: weatherAgentTools,
   memory: new Memory(),
-  // Voice Layer (Independent):
-  voice: createGeminiLiveVoice({ speaker: "Puck", debug: true }),
 });
