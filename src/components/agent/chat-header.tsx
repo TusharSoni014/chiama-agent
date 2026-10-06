@@ -4,7 +4,6 @@ import { memo } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 
 interface ChatHeaderProps {

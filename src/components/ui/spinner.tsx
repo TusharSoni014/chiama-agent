@@ -2,10 +2,27 @@ import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Loading03Icon } from "@hugeicons/core-free-icons"
 
-function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
-  return (
-    <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} data-slot="spinner" role="status" aria-label="Loading" className={cn("size-4 animate-spin", className)} {...props} />
-  )
+interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
+  size?: number;
 }
 
-export { Spinner }
+function Spinner({ className, size = 16, ...props }: SpinnerProps) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn("inline-flex items-center justify-center", className)}
+      {...props}
+    >
+      <HugeiconsIcon
+        icon={Loading03Icon}
+        strokeWidth={2}
+        size={size}
+        data-slot="spinner"
+        className="animate-spin"
+      />
+    </div>
+  );
+}
+
+export { Spinner };

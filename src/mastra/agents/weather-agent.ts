@@ -2,6 +2,7 @@ import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { weatherTool } from "../tools/weather-tool";
 import { lmStudioModel } from "../modelConfig";
+import { createGeminiLiveVoice } from "../voice/gemini-live";
 
 export const weatherAgent = new Agent({
   id: "weather-agent",
@@ -18,10 +19,10 @@ Your primary function is to help users get weather details for specific location
 - If the user asks for activities, respond in the format they request.
 
 Use the weatherTool to fetch current weather data.`,
-  model:
-    process.env.NODE_ENV === "development"
-      ? lmStudioModel
-      : "openai/gpt-5-mini",
+  // LLM Brain (LM Studio local model):
+  model: lmStudioModel,
   tools: { weatherTool },
   memory: new Memory(),
+  // Voice Layer (Independent):
+  voice: createGeminiLiveVoice({ speaker: "Puck", debug: true }),
 });
