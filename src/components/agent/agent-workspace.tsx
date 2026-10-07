@@ -4,7 +4,9 @@ import { useCallback, useState } from "react";
 import { useSession } from "next-auth/react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useChatThreads } from "@/hooks/use-chat-threads";
-import { toChatTitle } from "@/lib/chat-title";import { ChatDeleteDialog } from "./chat-delete-dialog";
+import { toChatTitle } from "@/lib/chat-title";
+import { ChatCommandDialog } from "./chat-command-dialog";
+import { ChatDeleteDialog } from "./chat-delete-dialog";
 import { ChatHeader } from "./chat-header";
 import { ChatSession } from "./chat-session";
 import { ChatSidebar } from "./chat-sidebar";
@@ -129,6 +131,14 @@ export function AgentWorkspace() {
           />
         )}
       </SidebarInset>
+
+      <ChatCommandDialog
+        threads={threads}
+        isLoading={isLoading}
+        error={error}
+        onSelectThread={handleSelectThread}
+        onNewChat={handleNewChat}
+      />
 
       <ChatDeleteDialog
         thread={threadToDelete}
