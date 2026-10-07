@@ -86,7 +86,12 @@ export const ChatEmptyState = memo(
       <Empty className="mx-auto max-w-2xl">
         <EmptyHeader>
           <EmptyMedia>
-            <AgentOrb state="breathing" size={64} label="Agent" />
+            <motion.div
+              initial={{ scale: 2, filter: "brightness(200%)", opacity: 0 }}
+              animate={{ scale: 1.3, filter: "brightness(100%)", opacity: 1 }}
+            >
+              <AgentOrb state="breathing" size={64} label="Agent" />
+            </motion.div>
           </EmptyMedia>
           <EmptyTitle>
             <AnimatePresence mode="popLayout">

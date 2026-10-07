@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSession } from "next-auth/react";
-import { useAgentStore } from "@/stores/agent-store";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useChatThreads } from "@/hooks/use-chat-threads";
 import { toChatTitle } from "@/lib/chat-title";
@@ -38,10 +37,6 @@ export function AgentWorkspace() {
   const fade = reduceMotion
     ? { duration: 0 }
     : { duration: 0.28, ease: [0.23, 1, 0.32, 1] as const };
-  const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
-  useEffect(() => {
-    if (sessionStatus === "unauthenticated") setHelpOpen(true);
-  }, [sessionStatus, setHelpOpen]);
 
   const activeChatId = activeChat.id;
 
@@ -117,7 +112,7 @@ export function AgentWorkspace() {
         onRequestDelete={handleRequestDelete}
       />
 
-      <SidebarInset className="h-svh min-w-0 overflow-hidden">
+      <SidebarInset className="h-svh min-w-0 overflow-hidden bg-black">
         <ChatHeader
           view={view}
           onNewChat={handleNewChat}
