@@ -1,11 +1,14 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useLayoutEffect, useRef, type ReactNode } from "react";
 import { isToolUIPart, type UIMessage } from "ai";
 import type { OrbState } from "thinking-orbs";
+import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Message, MessageContent } from "@/components/ui/message";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { CHIAMA_LOGO_URL } from "@/lib/brand";
 import { AgentOrb } from "./agent-orb";
 import { ChatToolCall } from "./chat-tool-call";
 import { UserAvatar } from "./user-avatar";
@@ -31,6 +34,53 @@ function agentOrbState(
   return { state: "breathing", paused: true };
 }
 
+/** Eases the bubble's height while streamed text grows, without scaling the text. */
+function StreamingFrame({
+  active,
+  watch,
+  children,
+}: {
+  active: boolean;
+  watch: string;
+  children: ReactNode;
+}) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const height = useMotionValue<number | "auto">("auto");
+  const reduceMotion = useReducedMotion();
+
+  useLayoutEffect(() => {
+    const inner = innerRef.current;
+    if (!inner) return;
+
+    const next = inner.offsetHeight;
+    if (!active || reduceMotion) {
+      height.set("auto");
+      return;
+    }
+
+    const current = height.get();
+    if (typeof current !== "number" || Math.abs(current - next) < 1) {
+      height.set(next);
+      return;
+    }
+
+    const controls = animate(height, next, {
+      duration: 0.2,
+      ease: [0.23, 1, 0.32, 1],
+    });
+    return () => controls.stop();
+  }, [active, watch, height, reduceMotion]);
+
+  return (
+    <motion.div
+      style={{ height }}
+      className={active ? "min-w-0 flex-1 overflow-hidden" : "min-w-0 flex-1"}
+    >
+      <div ref={innerRef}>{children}</div>
+    </motion.div>
+  );
+}
+
 export const ChatMessageItem = memo(
   ({
     message,
@@ -39,23 +89,9 @@ export const ChatMessageItem = memo(
   }: ChatMessageItemProps) => {
     const isUser = message.role === "user";
     const orb = isUser ? null : agentOrbState(message, isStreaming, isPending);
-
-    return (
-      <Message align={isUser ? "end" : "start"}>
-        {isUser ? (
-          <UserAvatar className="self-end" />
-        ) : orb ? (
-          <span className="flex size-8 shrink-0 items-center justify-center self-end">
-            <AgentOrb
-              size={32}
-              label={orb.paused ? "Agent" : undefined}
-              state={orb.state}
-              paused={orb.paused}
-            />
-          </span>
-        ) : null}
-        <MessageContent>
-          {message.parts.map((part, index) => {
+    const content = (
+      <MessageContent>
+        {message.parts.map((part, index) => {
             const key = `${message.id}-${index}`;
 
             if (part.type === "text") {
@@ -84,7 +120,39 @@ export const ChatMessageItem = memo(
 
             return null;
           })}
-        </MessageContent>
+      </MessageContent>
+    );
+
+    return (
+      <Message align={isUser ? "end" : "start"}>
+        {isUser ? (
+          <UserAvatar className="self-end" />
+        ) : orb?.paused ? (
+          <Avatar className="self-end">
+            <AvatarImage src={CHIAMA_LOGO_URL} alt="Chiama" />
+            <AvatarFallback>C</AvatarFallback>
+          </Avatar>
+        ) : orb ? (
+          <span className="flex size-8 shrink-0 items-center justify-center self-end">
+            <AgentOrb size={32} state={orb.state} paused={orb.paused} />
+          </span>
+        ) : null}
+        {isUser ? (
+          content
+        ) : (
+          <StreamingFrame
+            active={isStreaming || isPending}
+            watch={message.parts
+              .map((part) =>
+                part.type === "text"
+                  ? part.text.length
+                  : `${part.type}:${"state" in part ? part.state : ""}`,
+              )
+              .join(":")}
+          >
+            {content}
+          </StreamingFrame>
+        )}
       </Message>
     );
   },

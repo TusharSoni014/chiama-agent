@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { CHIAMA_LOGO_URL } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,7 +10,7 @@ export default function Home() {
         <div className="w-full max-w-3xl text-center space-y-4 pt-4 sm:pt-6">
           <div className="flex justify-center items-center gap-3">
             <Image
-              src="/chiama.png"
+              src={CHIAMA_LOGO_URL}
               height={100}
               width={100}
               alt="Chiama.png"

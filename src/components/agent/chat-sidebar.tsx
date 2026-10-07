@@ -20,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CHIAMA_LOGO_URL } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { ChatSidebarUser } from "./chat-sidebar-user";
 import type { ChatThread } from "./types";
@@ -63,7 +64,7 @@ export const ChatSidebar = memo(
           <Link href="/">
             <div className="flex items-center gap-2.5 px-1">
               <Avatar className="size-7">
-                <AvatarImage src="/chiama.png" alt="Chiama" />
+                <AvatarImage src={CHIAMA_LOGO_URL} alt="Chiama" />
                 <AvatarFallback>C</AvatarFallback>
               </Avatar>
               <span className="text-sm font-semibold tracking-tight">
