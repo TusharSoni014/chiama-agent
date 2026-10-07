@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ChatSidebarUser } from "./chat-sidebar-user";
 import type { ChatThread } from "./types";
+import Link from "next/link";
 
 // Fixed widths (not random) so server and client render the same markup.
 const SKELETON_WIDTHS = ["w-4/5", "w-3/5", "w-11/12", "w-2/3"];
@@ -56,15 +57,17 @@ export const ChatSidebar = memo(
     return (
       <Sidebar collapsible="offcanvas">
         <SidebarHeader className="gap-3 p-3">
-          <div className="flex items-center gap-2.5 px-1">
-            <Avatar className="size-7">
-              <AvatarImage src="/chiama.png" alt="Chiama" />
-              <AvatarFallback>C</AvatarFallback>
-            </Avatar>
-            <span className="text-sm font-semibold tracking-tight">
-              Chiama Agent
-            </span>
-          </div>
+          <Link href="/">
+            <div className="flex items-center gap-2.5 px-1">
+              <Avatar className="size-7">
+                <AvatarImage src="/chiama.png" alt="Chiama" />
+                <AvatarFallback>C</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-semibold tracking-tight">
+                Chiama Agent
+              </span>
+            </div>
+          </Link>
           <Button
             variant="outline"
             className="w-full justify-start"
@@ -91,7 +94,9 @@ export const ChatSidebar = memo(
                   ))}
 
                 {!isLoading && error && (
-                  <li className="px-3 py-2 text-xs text-destructive">{error}</li>
+                  <li className="px-3 py-2 text-xs text-destructive">
+                    {error}
+                  </li>
                 )}
 
                 {!isLoading && !error && threads.length === 0 && (
@@ -134,7 +139,7 @@ export const ChatSidebar = memo(
         </SidebarFooter>
       </Sidebar>
     );
-  }
+  },
 );
 
 ChatSidebar.displayName = "ChatSidebar";

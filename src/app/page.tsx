@@ -15,7 +15,7 @@ export default function Home() {
               alt="Chiama.png"
             />
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-zinc-100 max-w-2xl leading-[1.15]">
-              Chiama Weather Agent
+              Chiama Agent
             </h1>
           </div>
           <h1 className="text-xl sm:text-5xl lg:text-4xl font-light tracking-tight text-zinc-100 max-w-2xl mx-auto leading-[1.15]">
