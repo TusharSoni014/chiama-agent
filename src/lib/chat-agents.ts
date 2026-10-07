@@ -10,11 +10,6 @@ export const CHAT_AGENTS = [
     description: "Forecasts and activity planning",
   },
   {
-    id: "assistant-agent",
-    name: "Assistant Agent",
-    description: "General help and brainstorming",
-  },
-  {
     id: "tusharsoni-agent",
     name: "Tushar Soni Agent",
     description: "Ask about Tushar Soni",
