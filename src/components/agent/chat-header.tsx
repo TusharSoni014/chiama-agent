@@ -57,7 +57,9 @@ export const ChatHeader = memo(
                 />
               }
             >
-              <span className="truncate">{activeAgent.name}</span>
+              <span className="truncate text-xs sm:text-base">
+                {activeAgent.name}
+              </span>
               <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-64">
@@ -98,9 +100,15 @@ export const ChatHeader = memo(
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                 exit={{ opacity: 0, scale: 0.6, filter: "blur(5px)" }}
               >
-                <Button variant="outline" size="sm" onClick={onNewChat}>
-                  <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
-                  New chat
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="New chat"
+                  onClick={onNewChat}
+                  className="max-md:size-8 max-md:px-0"
+                >
+                  <HugeiconsIcon icon={Add01Icon} />
+                  <span className="max-md:hidden">New chat</span>
                 </Button>
               </motion.div>
             )}
@@ -110,19 +118,23 @@ export const ChatHeader = memo(
             <Button
               variant="outline"
               size="sm"
+              aria-label="Call agent"
               onClick={() => onViewChange("call")}
+              className="max-md:size-8 max-md:px-0"
             >
-              <HugeiconsIcon icon={Call02Icon} data-icon="inline-start" />
-              Call agent
+              <HugeiconsIcon icon={Call02Icon} />
+              <span className="max-md:hidden">Call agent</span>
             </Button>
           ) : (
             <Button
               variant="outline"
               size="sm"
+              aria-label="Back to chat"
               onClick={() => onViewChange("chat")}
+              className="max-md:size-8 max-md:px-0"
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
-              Back to chat
+              <HugeiconsIcon icon={ArrowLeft01Icon} />
+              <span className="max-md:hidden">Back to chat</span>
             </Button>
           )}
         </div>

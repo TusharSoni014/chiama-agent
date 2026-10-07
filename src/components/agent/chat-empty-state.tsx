@@ -86,9 +86,6 @@ export const ChatEmptyState = memo(
     return (
       <Empty className="mx-auto max-w-2xl">
         <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <HugeiconsIcon icon={SunCloud01Icon} />
-          </EmptyMedia>
           <EmptyTitle>
             <AnimatePresence mode="popLayout">
               <motion.div
@@ -96,6 +93,7 @@ export const ChatEmptyState = memo(
                 initial={{ y: 20, filter: "blur(5px)", opacity: 0 }}
                 animate={{ y: 0, filter: "blur(0px)", opacity: 1 }}
                 exit={{ y: -20, filter: "blur(5px)", opacity: 0 }}
+                className="text-2xl"
               >
                 {AGENT_TITLES[selectedAgentId].title}
               </motion.div>
