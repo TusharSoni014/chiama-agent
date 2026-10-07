@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import { AgentWorkspace } from "@/components/agent/agent-workspace";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Agent | Chiama",
-};
+// A new id on every visit, so this must never be prerendered at build time.
+export const dynamic = "force-dynamic";
 
+/** `/agent` always starts a new chat: every chat lives at `/agent/<chat id>`. */
 export default function AgentPage() {
-  return <AgentWorkspace />;
+  redirect(`/agent/${crypto.randomUUID()}`);
 }

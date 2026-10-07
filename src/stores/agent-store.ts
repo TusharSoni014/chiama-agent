@@ -9,6 +9,9 @@ interface AgentStore {
   setHelpOpen: (open: boolean) => void;
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
+  /** Changes when the open chat must be reloaded (e.g. a voice call was saved). */
+  chatReloadToken: number;
+  reloadChat: () => void;
 }
 
 export const useAgentStore = create<AgentStore>((set) => ({
@@ -18,4 +21,6 @@ export const useAgentStore = create<AgentStore>((set) => ({
   setHelpOpen: (helpOpen) => set({ helpOpen }),
   settingsOpen: false,
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  chatReloadToken: 0,
+  reloadChat: () => set((s) => ({ chatReloadToken: s.chatReloadToken + 1 })),
 }));

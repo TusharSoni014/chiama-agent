@@ -1,4 +1,6 @@
 import { RequestContext } from "@mastra/core/request-context";
+import { toAISdkMessages } from "@mastra/ai-sdk/ui";
+import type { UIMessage } from "ai";
 import { mastra } from "@/mastra";
 import { OPENAI_KEY_CONTEXT } from "@/mastra/modelConfig";
 import { auth } from "@/lib/auth";
@@ -36,6 +38,26 @@ export function getUserKeyContext(req: Request) {
 
 export async function getChatMemory() {
   return mastra.getAgentById(CHAT_AGENT_ID).getMemory();
+}
+
+/**
+ * Looks up a chat by the id in the URL. `thread` is null for a brand-new chat.
+ * `allowed` is false when the chat belongs to someone else (or to a signed-in
+ * user while the visitor is signed out), so the page should say "not found".
+ */
+export async function openChat(threadId: string) {
+  const resourceId = await getChatResourceId();
+  const memory = await getChatMemory();
+  const thread = await memory?.getThreadById({ threadId });
+
+  if (!memory || !thread) return { allowed: true, messages: [] as UIMessage[] };
+  if (thread.resourceId !== resourceId) return { allowed: false, messages: [] };
+
+  const saved = await memory.recall({ threadId, resourceId: thread.resourceId });
+  return {
+    allowed: true,
+    messages: toAISdkMessages(saved?.messages ?? [], { version: "v7" }),
+  };
 }
 
 /** Builds a short sidebar title from the latest user message of a request. */

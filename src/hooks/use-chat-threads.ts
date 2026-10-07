@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ChatThread } from "@/components/agent/types";
 
 const THREADS_ENDPOINT = "/api/chat/threads";
@@ -77,4 +77,15 @@ export function useChatThreads() {
   }, []);
 
   return { threads, isLoading, error, refresh, addThread, removeThread };
+}
+
+/** The workspace owns the thread list; the chat page reads it from here. */
+export const ChatThreadsContext = createContext<ReturnType<
+  typeof useChatThreads
+> | null>(null);
+
+export function useChatThreadsContext() {
+  const threads = useContext(ChatThreadsContext);
+  if (!threads) throw new Error("Chat threads are only available inside the agent workspace.");
+  return threads;
 }

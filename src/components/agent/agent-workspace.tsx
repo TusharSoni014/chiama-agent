@@ -1,35 +1,33 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSession } from "next-auth/react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useChatThreads } from "@/hooks/use-chat-threads";
-import { toChatTitle } from "@/lib/chat-title";
+import { useAgentStore } from "@/stores/agent-store";
+import { ChatThreadsContext, useChatThreads } from "@/hooks/use-chat-threads";
 import { ChatCommandDialog } from "./chat-command-dialog";
 import { ChatDeleteDialog } from "./chat-delete-dialog";
 import { HelpDialog } from "./help-dialog";
 import { UserSettingsDialog } from "./user-settings-dialog";
 import { ChatHeader } from "./chat-header";
-import { ChatSession } from "./chat-session";
 import { ChatSidebar } from "./chat-sidebar";
 import { CallScreen } from "./call/call-screen";
-import type { ActiveChat, AgentView, ChatThread } from "./types";
+import type { AgentView, ChatThread } from "./types";
 
-const createDraftChat = (): ActiveChat => ({
-  id: crypto.randomUUID(),
-  isDraft: true,
-});
+export function AgentWorkspace({ children }: { children: ReactNode }) {
+  const threads = useChatThreads();
+  const { isLoading, error, refresh, removeThread } = threads;
+  const router = useRouter();
+  const reloadChat = useAgentStore((state) => state.reloadChat);
 
-export function AgentWorkspace() {
-  const { threads, isLoading, error, refresh, addThread, removeThread } =
-    useChatThreads();
-
-  // Always start on a fresh draft so there is a valid thread id before the first message.
-  const [activeChat, setActiveChat] = useState<ActiveChat>(createDraftChat);
+  // The open chat is whatever id is in the URL: /agent/<chatId>.
+  const { chatId } = useParams<{ chatId: string }>();
   const { status: sessionStatus } = useSession();
   const isSignedIn = sessionStatus === "authenticated";
-  const [view, setView] = useState<AgentView>("chat");  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
+  const [view, setView] = useState<AgentView>("chat");
+  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -38,41 +36,24 @@ export function AgentWorkspace() {
     ? { duration: 0 }
     : { duration: 0.28, ease: [0.23, 1, 0.32, 1] as const };
 
-  const activeChatId = activeChat.id;
-
-  // A saved call adds messages behind the hidden chat, so reopen it from the server.
-  const [chatRevision, setChatRevision] = useState(0);
+  // A saved call adds messages to the chat, so reload it from the server.
   const handleCallSaved = useCallback(() => {
-    setActiveChat((prev) => (prev.isDraft ? { ...prev, isDraft: false } : prev));
-    setChatRevision((revision) => revision + 1);
+    reloadChat();
     void refresh();
-  }, [refresh]);
+  }, [reloadChat, refresh]);
 
+  // `/agent` redirects to a fresh chat id.
   const handleNewChat = useCallback(() => {
     setView("chat");
-    setActiveChat(createDraftChat());
-  }, []);
+    router.push("/agent");
+  }, [router]);
 
-  const handleSelectThread = useCallback((threadId: string) => {
-    setView("chat");
-    setActiveChat((prev) =>
-      prev.id === threadId ? prev : { id: threadId, isDraft: false }
-    );
-  }, []);
-
-  const handleMessageSent = useCallback(
-    (text: string) => {
-      // Signed-out chats are not saved, so they never appear in the sidebar.
-      if (!isSignedIn) return;
-      const now = new Date().toISOString();
-      addThread({
-        id: activeChatId,
-        title: toChatTitle(text),
-        createdAt: now,
-        updatedAt: now,
-      });
+  const handleSelectThread = useCallback(
+    (threadId: string) => {
+      setView("chat");
+      router.push(`/agent/${threadId}`);
     },
-    [activeChatId, addThread, isSignedIn]
+    [router]
   );
 
   const handleRequestDelete = useCallback((thread: ChatThread) => {
@@ -87,7 +68,7 @@ export function AgentWorkspace() {
     setDeleteError(null);
     try {
       await removeThread(threadToDelete.id);
-      if (threadToDelete.id === activeChatId) {
+      if (threadToDelete.id === chatId) {
         handleNewChat();
       }
       setThreadToDelete(null);
@@ -98,82 +79,79 @@ export function AgentWorkspace() {
     } finally {
       setIsDeleting(false);
     }
-  }, [threadToDelete, removeThread, activeChatId, handleNewChat]);
+  }, [threadToDelete, removeThread, chatId, handleNewChat]);
 
   return (
-    <SidebarProvider>
-      <ChatSidebar
-        threads={threads}
-        isLoading={isLoading}
-        error={error}
-        activeThreadId={activeChatId}
-        onSelectThread={handleSelectThread}
-        onNewChat={handleNewChat}
-        onRequestDelete={handleRequestDelete}
-      />
-
-      <SidebarInset className="h-svh min-w-0 overflow-hidden bg-black">
-        <ChatHeader
-          view={view}
+    <ChatThreadsContext.Provider value={threads}>
+      <SidebarProvider>
+        <ChatSidebar
+          threads={threads.threads}
+          isLoading={isLoading}
+          error={error}
+          activeThreadId={chatId}
+          onSelectThread={handleSelectThread}
           onNewChat={handleNewChat}
-          onViewChange={setView}
+          onRequestDelete={handleRequestDelete}
         />
 
-        <div className="relative min-h-0 flex-1 overflow-hidden">
-          {/* Stays mounted behind the call so an in-flight reply is not lost. */}
-          <motion.div
-            className="absolute inset-0 flex min-h-0 flex-col"
-            animate={{ opacity: view === "chat" ? 1 : 0 }}
-            transition={fade}
-            style={{ pointerEvents: view === "chat" ? "auto" : "none" }}
-            aria-hidden={view !== "chat"}
-          >
-            <ChatSession
-              key={`${activeChatId}:${chatRevision}`}
-              chat={activeChat}
-              onMessageSent={handleMessageSent}
-              onTurnFinished={refresh}
-            />
-          </motion.div>
-          <AnimatePresence>
-            {view === "call" && (
-              <motion.div
-                key="call"
-                className="absolute inset-0 flex min-h-0 flex-col"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={fade}
-              >
-                <CallScreen
-                  threadId={activeChatId}
-                  persist={isSignedIn}
-                  onTranscriptSaved={handleCallSaved}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </SidebarInset>
+        <SidebarInset className="h-svh min-w-0 overflow-hidden bg-black">
+          <ChatHeader
+            view={view}
+            onNewChat={handleNewChat}
+            onViewChange={setView}
+          />
 
-      <ChatCommandDialog
-        threads={threads}
-        isLoading={isLoading}
-        error={error}
-        onSelectThread={handleSelectThread}
-        onNewChat={handleNewChat}
-      />
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            {/* Stays mounted behind the call so an in-flight reply is not lost. */}
+            <motion.div
+              className="absolute inset-0 flex min-h-0 flex-col"
+              animate={{ opacity: view === "chat" ? 1 : 0 }}
+              transition={fade}
+              style={{ pointerEvents: view === "chat" ? "auto" : "none" }}
+              aria-hidden={view !== "chat"}
+            >
+              {children}
+            </motion.div>
+            <AnimatePresence>
+              {view === "call" && (
+                <motion.div
+                  key="call"
+                  className="absolute inset-0 flex min-h-0 flex-col"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={fade}
+                >
+                  <CallScreen
+                    threadId={chatId}
+                    persist={isSignedIn}
+                    onTranscriptSaved={handleCallSaved}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </SidebarInset>
 
-      <HelpDialog signedIn={isSignedIn} />
-      <UserSettingsDialog />
+        <ChatCommandDialog
+          threads={threads.threads}
+          isLoading={isLoading}
+          error={error}
+          onSelectThread={handleSelectThread}
+          onNewChat={handleNewChat}
+        />
 
-      <ChatDeleteDialog
-        thread={threadToDelete}
-        isDeleting={isDeleting}
-        error={deleteError}
-        onCancel={() => setThreadToDelete(null)}
-        onConfirm={handleConfirmDelete}
-      />
-    </SidebarProvider>
+        <HelpDialog signedIn={isSignedIn} />
+        <UserSettingsDialog />
+
+        <ChatDeleteDialog
+          thread={threadToDelete}
+          isDeleting={isDeleting}
+          error={deleteError}
+          onCancel={() => setThreadToDelete(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      </SidebarProvider>
+    </ChatThreadsContext.Provider>
   );
 }

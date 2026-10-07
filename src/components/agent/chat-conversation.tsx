@@ -3,7 +3,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useChat } from "@ai-sdk/react";
+import { useSession } from "next-auth/react";
 import { useAgentStore } from "@/stores/agent-store";
+import { useChatThreadsContext } from "@/hooks/use-chat-threads";
+import { toChatTitle } from "@/lib/chat-title";
 import {
   getStoredOpenAIKey,
   isOpenAIUsageLimitError,
@@ -19,10 +22,6 @@ import { ChatAgentId } from "@/lib/chat-agents";
 interface ChatConversationProps {
   threadId: string;
   initialMessages: UIMessage[];
-  /** Called as soon as the user sends a message. */
-  onMessageSent: (text: string) => void;
-  /** Called when a response finished or failed, so the thread list can refresh. */
-  onTurnFinished: () => void;
 }
 
 const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
@@ -33,9 +32,10 @@ const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
 export function ChatConversation({
   threadId,
   initialMessages,
-  onMessageSent,
-  onTurnFinished,
 }: ChatConversationProps) {
+  const { addThread, refresh } = useChatThreadsContext();
+  const { status: sessionStatus } = useSession();
+  const isSignedIn = sessionStatus === "authenticated";
   // Read at send time, so the agent can change mid-conversation.
   const agentId = useAgentStore((state) => state.selectedAgentId);
   const [input, setInput] = useState("");
@@ -60,8 +60,9 @@ export function ChatConversation({
       id: threadId,
       messages: initialMessages,
       transport,
-      onFinish: () => onTurnFinished(),
-      onError: () => onTurnFinished(),
+      // Refresh the sidebar list once a reply finished or failed.
+      onFinish: () => void refresh(),
+      onError: () => void refresh(),
     });
 
   const isBusy = status === "submitted" || status === "streaming";
@@ -73,9 +74,19 @@ export function ChatConversation({
 
       clearError();
       void sendMessage({ text: trimmed }, { body: { agentId } });
-      onMessageSent(trimmed);
+
+      // Show the chat in the sidebar right away. Signed-out chats are not saved.
+      if (isSignedIn) {
+        const now = new Date().toISOString();
+        addThread({
+          id: threadId,
+          title: toChatTitle(trimmed),
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
     },
-    [isBusy, clearError, sendMessage, onMessageSent, agentId],
+    [isBusy, clearError, sendMessage, agentId, isSignedIn, addThread, threadId],
   );
 
   const handleSubmit = useCallback(() => {

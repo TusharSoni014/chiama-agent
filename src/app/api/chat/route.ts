@@ -1,10 +1,7 @@
 import { handleChatStream } from "@mastra/ai-sdk";
-import { toAISdkMessages } from "@mastra/ai-sdk/ui";
 import { createUIMessageStreamResponse } from "ai";
 import { mastra } from "@/mastra";
-import { NextResponse } from "next/server";
 import {
-  CHAT_AGENT_ID,
   deriveThreadTitle,
   errorResponse,
   getChatMemory,
@@ -87,36 +84,4 @@ export async function POST(req: Request) {
       500
     );
   }
-}
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const threadId = searchParams.get("threadId");
-
-  if (!threadId) {
-    return NextResponse.json([]);
-  }
-
-  const resourceId = await getChatResourceId();
-  // Anonymous chats are never saved, so there is no history to load.
-  if (!resourceId) {
-    return NextResponse.json([]);
-  }
-  const memory = await mastra.getAgentById(CHAT_AGENT_ID).getMemory();
-  let response = null;
-
-  try {
-    response = await memory?.recall({
-      threadId,
-      resourceId,
-    });
-  } catch {
-    console.log("No previous messages found.");
-  }
-
-  const uiMessages = toAISdkMessages(response?.messages || [], {
-    version: "v7",
-  });
-
-  return NextResponse.json(uiMessages);
 }
