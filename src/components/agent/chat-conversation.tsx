@@ -4,7 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useAgentStore } from "@/stores/agent-store";
-import { getStoredOpenAIKey, OPENAI_KEY_HEADER } from "@/lib/openai-key-storage";
+import {
+  getStoredOpenAIKey,
+  OPENAI_KEY_HEADER,
+} from "@/lib/openai-key-storage";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatErrorAlert } from "./chat-error-alert";
 import { ChatInput } from "./chat-input";
@@ -22,7 +25,7 @@ interface ChatConversationProps {
 
 const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
   "weather-agent": "Ask about the weather in any city",
-  "tusharsoni-agent": "Ask abything about Tushar Soni",
+  "tusharsoni-agent": "Ask anything about Tushar Soni",
 };
 
 export function ChatConversation({

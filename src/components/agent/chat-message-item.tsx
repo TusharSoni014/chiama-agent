@@ -3,7 +3,13 @@
 import { memo, useLayoutEffect, useRef, type ReactNode } from "react";
 import { isToolUIPart, type UIMessage } from "ai";
 import type { OrbState } from "thinking-orbs";
-import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+} from "motion/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Message, MessageContent } from "@/components/ui/message";
@@ -32,6 +38,47 @@ function agentOrbState(
   if (isUsingTool || isPending) return { state: "searching", paused: false };
   if (isStreaming) return { state: "composing", paused: false };
   return { state: "breathing", paused: true };
+}
+
+/** Fades the thinking orb into the Chiama mark when a reply finishes. */
+function AgentMark({ state, paused }: { state: OrbState; paused: boolean }) {
+  const reduceMotion = useReducedMotion();
+  const fade = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.3, ease: "easeOut" as const };
+
+  return (
+    <span className="relative size-8 shrink-0 self-end">
+      <AnimatePresence initial={false}>
+        {paused ? (
+          <motion.div
+            key="logo"
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={fade}
+          >
+            <Avatar>
+              <AvatarImage src={CHIAMA_LOGO_URL} alt="Chiama" />
+              <AvatarFallback>C</AvatarFallback>
+            </Avatar>
+          </motion.div>
+        ) : (
+          <motion.div
+            key={state}
+            className="absolute inset-0 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={fade}
+          >
+            <AgentOrb size={32} state={state} paused={paused} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
 }
 
 /** Eases the bubble's height while streamed text grows, without scaling the text. */
@@ -127,15 +174,8 @@ export const ChatMessageItem = memo(
       <Message align={isUser ? "end" : "start"}>
         {isUser ? (
           <UserAvatar className="self-end" />
-        ) : orb?.paused ? (
-          <Avatar className="self-end">
-            <AvatarImage src={CHIAMA_LOGO_URL} alt="Chiama" />
-            <AvatarFallback>C</AvatarFallback>
-          </Avatar>
         ) : orb ? (
-          <span className="flex size-8 shrink-0 items-center justify-center self-end">
-            <AgentOrb size={32} state={orb.state} paused={orb.paused} />
-          </span>
+          <AgentMark state={orb.state} paused={orb.paused} />
         ) : null}
         {isUser ? (
           content
