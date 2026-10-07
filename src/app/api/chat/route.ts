@@ -19,11 +19,26 @@ export async function POST(req: Request) {
     const threadId: string | undefined =
       params.threadId ?? params.memory?.thread;
 
+    const resourceId = await getChatResourceId();
+
+    // Anonymous visitors: answer from the messages sent by the browser, with no
+    // memory attached, so nothing is written to the backend.
+    if (!resourceId) {
+      const { agentId, memory: _memory, threadId: _threadId, ...guestParams } =
+        params;
+      const guestStream = await handleChatStream({
+        mastra,
+        agentId: resolveChatAgentId(agentId),
+        version: "v7",
+        params: guestParams,
+      });
+      return createUIMessageStreamResponse({ stream: guestStream });
+    }
+
     if (!threadId) {
       return errorResponse("Missing threadId for this conversation.", 400);
     }
 
-    const resourceId = await getChatResourceId();
     const memory = await getChatMemory();
 
     // Make sure the thread exists (and is titled) before the agent runs, so it
@@ -81,6 +96,10 @@ export async function GET(req: Request) {
   }
 
   const resourceId = await getChatResourceId();
+  // Anonymous chats are never saved, so there is no history to load.
+  if (!resourceId) {
+    return NextResponse.json([]);
+  }
   const memory = await mastra.getAgentById(CHAT_AGENT_ID).getMemory();
   let response = null;
 

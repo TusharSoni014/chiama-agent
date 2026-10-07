@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useSession } from "next-auth/react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useChatThreads } from "@/hooks/use-chat-threads";
 import { toChatTitle } from "@/lib/chat-title";import { ChatDeleteDialog } from "./chat-delete-dialog";
@@ -21,6 +22,8 @@ export function AgentWorkspace() {
 
   // Always start on a fresh draft so there is a valid thread id before the first message.
   const [activeChat, setActiveChat] = useState<ActiveChat>(createDraftChat);
+  const { status: sessionStatus } = useSession();
+  const isSignedIn = sessionStatus === "authenticated";
   const [view, setView] = useState<AgentView>("chat");  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -49,6 +52,8 @@ export function AgentWorkspace() {
 
   const handleMessageSent = useCallback(
     (text: string) => {
+      // Signed-out chats are not saved, so they never appear in the sidebar.
+      if (!isSignedIn) return;
       const now = new Date().toISOString();
       addThread({
         id: activeChatId,
@@ -57,7 +62,7 @@ export function AgentWorkspace() {
         updatedAt: now,
       });
     },
-    [activeChatId, addThread]
+    [activeChatId, addThread, isSignedIn]
   );
 
   const handleRequestDelete = useCallback((thread: ChatThread) => {
@@ -119,6 +124,7 @@ export function AgentWorkspace() {
         {view === "call" && (
           <CallScreen
             threadId={activeChatId}
+            persist={isSignedIn}
             onTranscriptSaved={handleCallSaved}
           />
         )}

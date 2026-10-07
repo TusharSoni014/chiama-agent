@@ -12,15 +12,13 @@ export function resolveChatAgentId(value: unknown) {
   return isChatAgentId(value) ? value : DEFAULT_CHAT_AGENT_ID;
 }
 
-const DEFAULT_RESOURCE = "weather-chat";
-
 /**
  * Resource that owns every thread for the current visitor.
- * Signed-in users get their own resource, anonymous visitors share one.
+ * Returns `null` for anonymous visitors: their chats are never saved.
  */
-export async function getChatResourceId(): Promise<string> {
+export async function getChatResourceId(): Promise<string | null> {
   const session = await auth();
-  return session?.user?.id ?? DEFAULT_RESOURCE;
+  return session?.user?.id ?? null;
 }
 
 export async function getChatMemory() {

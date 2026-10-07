@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PcmPlayer, startMic } from "@/lib/call-audio";
+import { useAgentStore } from "@/stores/agent-store";
 import type {
   VoiceClientMessage,
   VoiceRole,
@@ -27,6 +28,8 @@ interface UseVoiceCallOptions {
   threadId: string;
   /** Called once the call's transcript has been added to that conversation. */
   onSaved?: () => void;
+  /** When false (signed-out visitors) the transcript is never sent to the server. */
+  persist?: boolean;
 }
 
 const VOICE_WS_URL = `${
@@ -38,16 +41,20 @@ function toBase64(buffer: ArrayBuffer) {
 }
 
 /** Voice call with the agent: mic and speaker streamed over a WebSocket to server/. */
-export function useVoiceCall({ threadId, onSaved }: UseVoiceCallOptions) {
+export function useVoiceCall({
+  threadId,
+  onSaved,
+  persist = true,
+}: UseVoiceCallOptions) {
   const [phase, setPhase] = useState<Exclude<CallStatus, "speaking">>("idle");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const hangUpRef = useRef<((message?: string) => void) | null>(null);
-  const optionsRef = useRef({ threadId, onSaved });
+  const optionsRef = useRef({ threadId, onSaved, persist });
   useEffect(() => {
-    optionsRef.current = { threadId, onSaved };
+    optionsRef.current = { threadId, onSaved, persist };
   });
 
   const start = useCallback(async () => {
@@ -68,7 +75,7 @@ export function useVoiceCall({ threadId, onSaved }: UseVoiceCallOptions) {
 
     const saveTranscript = () => {
       const spoken = entries.filter((entry) => entry.text.trim());
-      if (spoken.length === 0) return;
+      if (spoken.length === 0 || !optionsRef.current.persist) return;
       fetch("/api/chat/call-transcript", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -119,7 +126,11 @@ export function useVoiceCall({ threadId, onSaved }: UseVoiceCallOptions) {
       if (closed) return stop();
       stopMic = stop;
 
-      socket = new WebSocket(VOICE_WS_URL);
+      // Read the dropdown's current choice once, when the call begins.
+      const { selectedAgentId } = useAgentStore.getState();
+      socket = new WebSocket(
+        `${VOICE_WS_URL}?agentId=${encodeURIComponent(selectedAgentId)}`
+      );
       socket.onclose = () =>
         hangUp(
           live

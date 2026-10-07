@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { DEFAULT_CHAT_AGENT_ID, isChatAgentId } from "../src/lib/chat-agents";
 import { createVoiceHandler } from "./voice-handler";
 
 const PORT = Number(process.env.VOICE_SERVER_PORT ?? 3001);
@@ -23,7 +24,13 @@ app.use("/ws/*", async (c, next) => {
 
 app.get(
   "/ws/voice",
-  upgradeWebSocket(() => createVoiceHandler())
+  // The browser says which agent it wants as `?agentId=...`; unknown ids fall back to the default.
+  upgradeWebSocket((c) => {
+    const requested = c.req.query("agentId");
+    return createVoiceHandler(
+      isChatAgentId(requested) ? requested : DEFAULT_CHAT_AGENT_ID
+    );
+  })
 );
 
 const server = serve({ fetch: app.fetch, port: PORT }, () =>

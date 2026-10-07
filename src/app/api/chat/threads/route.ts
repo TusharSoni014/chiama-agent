@@ -5,7 +5,7 @@ export const GET = async () => {
   try {
     const resourceId = await getChatResourceId();
     const memory = await getChatMemory();
-    if (!memory) {
+    if (!resourceId || !memory) {
       return NextResponse.json([]);
     }
 
@@ -34,6 +34,10 @@ export const DELETE = async (req: Request) => {
 
   try {
     const resourceId = await getChatResourceId();
+    // Anonymous chats are not stored, so there is nothing to delete.
+    if (!resourceId) {
+      return NextResponse.json({ success: true });
+    }
     const memory = await getChatMemory();
     if (!memory) {
       return NextResponse.json({ error: "Memory unavailable" }, { status: 500 });

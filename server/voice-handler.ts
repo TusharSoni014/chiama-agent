@@ -3,15 +3,13 @@ import type {
   VoiceClientMessage,
   VoiceServerMessage,
 } from "../src/lib/voice-protocol";
-import { createVoiceAgent } from "./voice-agent";
-
-const GREETING =
-  "Hi, I'm your weather assistant. Which city would you like the weather for?";
+import type { ChatAgentId } from "../src/lib/chat-agents";
+import { createVoiceAgent, getVoiceGreeting } from "./voice-agent";
 
 type Voice = Awaited<ReturnType<ReturnType<typeof createVoiceAgent>["getVoice"]>>;
 
 /** Per-connection handlers: browser audio -> OpenAI Realtime, and its audio/transcripts back. */
-export function createVoiceHandler() {
+export function createVoiceHandler(agentId: ChatAgentId) {
   let voice: Voice | undefined;
   let closed = false;
 
@@ -35,7 +33,7 @@ export function createVoiceHandler() {
         }
 
         // getVoice() hands the agent's instructions and tools to the voice.
-        const instance = await createVoiceAgent().getVoice();
+        const instance = await createVoiceAgent(agentId).getVoice();
         voice = instance;
 
         instance.on("speaker", (stream: NodeJS.ReadableStream) => {
@@ -84,7 +82,7 @@ export function createVoiceHandler() {
         if (closed) return instance.close?.();
 
         send({ type: "ready" });
-        await instance.speak(GREETING);
+        await instance.speak(getVoiceGreeting(agentId));
       } catch (error) {
         console.error("[voice] failed to start:", error);
         send({

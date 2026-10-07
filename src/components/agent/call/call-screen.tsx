@@ -31,12 +31,18 @@ interface CallScreenProps {
   /** Conversation the call transcript is saved into when the call ends. */
   threadId: string;
   onTranscriptSaved: () => void;
+  /** False for signed-out visitors: the call works but is never saved. */
+  persist?: boolean;
 }
 
 /** Mount only while the call view is open: unmounting hangs up the call. */
-export function CallScreen({ threadId, onTranscriptSaved }: CallScreenProps) {
+export function CallScreen({
+  threadId,
+  onTranscriptSaved,
+  persist = true,
+}: CallScreenProps) {
   const { status, isActive, transcript, error, start, end, dismissError } =
-    useVoiceCall({ threadId, onSaved: onTranscriptSaved });
+    useVoiceCall({ threadId, onSaved: onTranscriptSaved, persist });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

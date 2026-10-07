@@ -39,10 +39,13 @@ export async function POST(req: Request) {
     }
     if (entries.length === 0) return NextResponse.json({ saved: 0 });
 
+    // Anonymous calls are never saved.
+    const resourceId = await getChatResourceId();
+    if (!resourceId) return NextResponse.json({ saved: 0 });
+
     const memory = await getChatMemory();
     if (!memory) return errorResponse("Chat memory is not configured.", 500);
 
-    const resourceId = await getChatResourceId();
     const existing = await memory.getThreadById({ threadId });
 
     if (existing && existing.resourceId !== resourceId) {
