@@ -5,9 +5,13 @@ interface AgentStore {
   /** Agent that answers the next chat message. */
   selectedAgentId: ChatAgentId;
   setSelectedAgentId: (agentId: ChatAgentId) => void;
+  helpOpen: boolean;
+  setHelpOpen: (open: boolean) => void;
 }
 
 export const useAgentStore = create<AgentStore>((set) => ({
   selectedAgentId: DEFAULT_CHAT_AGENT_ID,
   setSelectedAgentId: (selectedAgentId) => set({ selectedAgentId }),
+  helpOpen: false,
+  setHelpOpen: (helpOpen) => set({ helpOpen }),
 }));

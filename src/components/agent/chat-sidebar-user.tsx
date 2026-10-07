@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  HelpCircleIcon,
   Login01Icon,
   Logout01Icon,
   Settings02Icon,
@@ -24,68 +25,102 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAgentStore } from "@/stores/agent-store";
+import { HelpDialog } from "./help-dialog";
 import { UserSettingsDialog } from "./user-settings-dialog";
 
 export function ChatSidebarUser() {
   const { data: session, status } = useSession();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const helpOpen = useAgentStore((state) => state.helpOpen);
+  const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
+  const signedIn = Boolean(session?.user);
+
+  useEffect(() => {
+    if (status === "unauthenticated") setHelpOpen(true);
+  }, [status, setHelpOpen]);
 
   if (status === "loading") {
     return <Skeleton className="h-12 w-full" />;
   }
 
-  if (!session?.user) {
-    return (
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={() => signIn("google")}
-      >
-        <HugeiconsIcon icon={Login01Icon} data-icon="inline-start" />
-        Sign in with Google
-      </Button>
-    );
-  }
-
-  const { name, email, image, id } = session.user;
-
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
-            <Avatar>
-              <AvatarImage src={image ?? undefined} alt={name ?? "User"} />
-              <AvatarFallback>{name?.[0] ?? "U"}</AvatarFallback>
-            </Avatar>
-            <div className="grid min-w-0 flex-1 text-left leading-tight">
-              <span className="truncate text-sm font-medium">
-                {name ?? "User"}
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {email ?? id}
-              </span>
-            </div>
-            <HugeiconsIcon
-              icon={UnfoldMoreIcon}
-              className="ml-auto size-4 shrink-0 text-muted-foreground"
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="start">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                <HugeiconsIcon icon={Settings02Icon} />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => signOut()}>
-                <HugeiconsIcon icon={Logout01Icon} />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-      <UserSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-    </SidebarMenu>
+    <>
+      {!signedIn ? (
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="min-w-0 flex-1"
+            onClick={() => signIn("google")}
+          >
+            <HugeiconsIcon icon={Login01Icon} data-icon="inline-start" />
+            Sign in with Google
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Help"
+            onClick={() => setHelpOpen(true)}
+          >
+            <HugeiconsIcon icon={HelpCircleIcon} />
+          </Button>
+        </div>
+      ) : (
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+                <Avatar>
+                  <AvatarImage
+                    src={session?.user?.image ?? undefined}
+                    alt={session?.user?.name ?? "User"}
+                  />
+                  <AvatarFallback>
+                    {session?.user?.name?.[0] ?? "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid min-w-0 flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-medium">
+                    {session?.user?.name ?? "User"}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {session?.user?.email ?? session?.user?.id}
+                  </span>
+                </div>
+                <HugeiconsIcon
+                  icon={UnfoldMoreIcon}
+                  className="ml-auto size-4 shrink-0 text-muted-foreground"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => setHelpOpen(true)}>
+                    <HugeiconsIcon icon={HelpCircleIcon} />
+                    Help
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                    <HugeiconsIcon icon={Settings02Icon} />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <HugeiconsIcon icon={Logout01Icon} />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+          <UserSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+          />
+        </SidebarMenu>
+      )}
+      <HelpDialog
+        open={helpOpen}
+        onOpenChange={setHelpOpen}
+        signedIn={signedIn}
+      />
+    </>
   );
 }
