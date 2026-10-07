@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSession } from "next-auth/react";
 import { useAgentStore } from "@/stores/agent-store";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -33,6 +34,10 @@ export function AgentWorkspace() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const reduceMotion = useReducedMotion();
+  const fade = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.28, ease: [0.23, 1, 0.32, 1] as const };
   const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
   useEffect(() => {
     if (sessionStatus === "unauthenticated") setHelpOpen(true);
@@ -119,25 +124,41 @@ export function AgentWorkspace() {
           onViewChange={setView}
         />
 
-        {/* Stays mounted behind the call so an in-flight reply is not lost. */}
-        <div
-          className={view === "chat" ? "flex min-h-0 flex-1 flex-col" : "hidden"}
-        >
-          <ChatSession
-            key={`${activeChatId}:${chatRevision}`}
-            chat={activeChat}
-            onMessageSent={handleMessageSent}
-            onTurnFinished={refresh}
-          />
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {/* Stays mounted behind the call so an in-flight reply is not lost. */}
+          <motion.div
+            className="absolute inset-0 flex min-h-0 flex-col"
+            animate={{ opacity: view === "chat" ? 1 : 0 }}
+            transition={fade}
+            style={{ pointerEvents: view === "chat" ? "auto" : "none" }}
+            aria-hidden={view !== "chat"}
+          >
+            <ChatSession
+              key={`${activeChatId}:${chatRevision}`}
+              chat={activeChat}
+              onMessageSent={handleMessageSent}
+              onTurnFinished={refresh}
+            />
+          </motion.div>
+          <AnimatePresence>
+            {view === "call" && (
+              <motion.div
+                key="call"
+                className="absolute inset-0 flex min-h-0 flex-col"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={fade}
+              >
+                <CallScreen
+                  threadId={activeChatId}
+                  persist={isSignedIn}
+                  onTranscriptSaved={handleCallSaved}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        {view === "call" && (
-          <CallScreen
-            threadId={activeChatId}
-            persist={isSignedIn}
-            onTranscriptSaved={handleCallSaved}
-          />
-        )}
       </SidebarInset>
 
       <ChatCommandDialog
