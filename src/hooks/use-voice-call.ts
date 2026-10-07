@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PcmPlayer, startMic } from "@/lib/call-audio";
 import { useAgentStore } from "@/stores/agent-store";
+import { getStoredOpenAIKey } from "@/lib/openai-key-storage";
 import type {
   VoiceClientMessage,
   VoiceRole,
@@ -144,6 +145,12 @@ export function useVoiceCall({
       socket = new WebSocket(
         `${VOICE_WS_URL}?agentId=${encodeURIComponent(selectedAgentId)}`
       );
+      // The server waits for this before it opens the call.
+      socket.onopen = () => {
+        const openaiKey = getStoredOpenAIKey() ?? undefined;
+        const start: VoiceClientMessage = { type: "start", openaiKey };
+        socket?.send(JSON.stringify(start));
+      };
       socket.onclose = () =>
         hangUp(
           live

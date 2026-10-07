@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useAgentStore } from "@/stores/agent-store";
+import { getStoredOpenAIKey, OPENAI_KEY_HEADER } from "@/lib/openai-key-storage";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatErrorAlert } from "./chat-error-alert";
 import { ChatInput } from "./chat-input";
@@ -40,6 +41,11 @@ export function ChatConversation({
       new DefaultChatTransport({
         api: "/api/chat",
         body: { threadId },
+        // Read at send time, so a key saved in Settings applies to the next message.
+        headers: (): Record<string, string> => {
+          const key = getStoredOpenAIKey();
+          return key ? { [OPENAI_KEY_HEADER]: key } : {};
+        },
       }),
     [threadId],
   );

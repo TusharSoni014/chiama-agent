@@ -1,7 +1,7 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { weatherTool } from "../tools/weather-tool";
-import { textModel } from "../modelConfig";
+import { resolveTextModel } from "../modelConfig";
 
 /** Shared by the text agent below and the per-call voice agent (server/voice-agent.ts). */
 export const weatherAgentInstructions = `You are a helpful weather assistant that provides accurate weather information and can help planning activities based on the weather.
@@ -30,8 +30,8 @@ export const weatherAgent = new Agent({
   id: "weather-agent",
   name: "Weather Agent",
   instructions: weatherAgentInstructions,
-  // LLM Brain (OpenRouter free router):
-  model: textModel,
+  // LLM Brain: OpenRouter free router, or the visitor's own OpenAI key when sent.
+  model: resolveTextModel,
   tools: weatherAgentTools,
   memory: new Memory(),
 });

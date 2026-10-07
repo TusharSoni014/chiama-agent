@@ -1,5 +1,8 @@
+import { RequestContext } from "@mastra/core/request-context";
 import { mastra } from "@/mastra";
+import { OPENAI_KEY_CONTEXT } from "@/mastra/modelConfig";
 import { auth } from "@/lib/auth";
+import { OPENAI_KEY_HEADER } from "@/lib/openai-key-storage";
 import { DEFAULT_CHAT_TITLE, toChatTitle } from "@/lib/chat-title";
 
 import { DEFAULT_CHAT_AGENT_ID, isChatAgentId } from "@/lib/chat-agents";
@@ -19,6 +22,16 @@ export function resolveChatAgentId(value: unknown) {
 export async function getChatResourceId(): Promise<string | null> {
   const session = await auth();
   return session?.user?.id ?? null;
+}
+
+/**
+ * The visitor's own OpenAI key, if they sent one, as a request context for this
+ * single call. It is never saved, logged, or put in memory.
+ */
+export function getUserKeyContext(req: Request) {
+  const key = req.headers.get(OPENAI_KEY_HEADER)?.trim();
+  if (!key) return {};
+  return { requestContext: new RequestContext([[OPENAI_KEY_CONTEXT, key]]) };
 }
 
 export async function getChatMemory() {

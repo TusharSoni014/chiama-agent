@@ -51,13 +51,14 @@ export function getVoiceGreeting(agentId: ChatAgentId) {
  * During a call `gpt-realtime` does the thinking and speaking; `model` below is
  * only used if this agent is asked for a text reply.
  */
-export function createVoiceAgent(agentId: ChatAgentId) {
+export function createVoiceAgent(agentId: ChatAgentId, apiKey?: string) {
   const profile = VOICE_PROFILES[agentId];
 
   const voice = new OpenAIRealtimeVoice({
     model: "gpt-realtime",
     speaker: "alloy",
-    apiKey: process.env.OPENAI_API_KEY,
+    // The caller's own key when they sent one, otherwise the server's.
+    apiKey: apiKey || process.env.OPENAI_API_KEY,
   });
 
   return new Agent({

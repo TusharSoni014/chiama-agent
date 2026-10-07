@@ -1,8 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Login01Icon, Logout01Icon } from "@hugeicons/core-free-icons";
+import {
+  Login01Icon,
+  Logout01Icon,
+  Settings02Icon,
+  UnfoldMoreIcon,
+} from "@hugeicons/core-free-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +24,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserSettingsDialog } from "./user-settings-dialog";
 
 export function ChatSidebarUser() {
   const { data: session, status } = useSession();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (status === "loading") {
     return <Skeleton className="h-12 w-full" />;
@@ -58,17 +66,26 @@ export function ChatSidebarUser() {
                 {email ?? id}
               </span>
             </div>
+            <HugeiconsIcon
+              icon={UnfoldMoreIcon}
+              className="ml-auto size-4 shrink-0 text-muted-foreground"
+            />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start">
             <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                <HugeiconsIcon icon={Settings02Icon} />
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => signOut()}>
                 <HugeiconsIcon icon={Logout01Icon} />
-                Sign out
+                Log out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+      <UserSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </SidebarMenu>
   );
 }

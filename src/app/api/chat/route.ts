@@ -10,6 +10,7 @@ import {
   getChatMemory,
   getChatResourceId,
   getErrorMessage,
+  getUserKeyContext,
   resolveChatAgentId,
 } from "@/lib/chat-server";
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         mastra,
         agentId: resolveChatAgentId(agentId),
         version: "v7",
-        params: guestParams,
+        params: { ...guestParams, ...getUserKeyContext(req) },
       });
       return createUIMessageStreamResponse({ stream: guestStream });
     }
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
           thread: threadId,
           resource: resourceId,
         },
+        ...getUserKeyContext(req),
       },
     });
     return createUIMessageStreamResponse({ stream });

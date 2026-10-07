@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
-import { textModel } from "../modelConfig";
+import { resolveTextModel } from "../modelConfig";
 import { tusharSoniTool } from "../tools/tusharsoni-tool";
 
 export const tusharSoniAgentInstructions = `You are a assistant for Tushar Soni, 24 years old guy. Your purpose is to tell the user talking to you introduce about your skills, projects, professional experience and his passion towards coding.
@@ -22,6 +22,6 @@ export const tusharSoniAgent = new Agent({
   name: "Tushar Soni Agent",
   instructions: tusharSoniAgentInstructions,
   tools: { tusharSoniTool },
-  model: textModel,
+  model: resolveTextModel,
   memory: new Memory(),
 });
