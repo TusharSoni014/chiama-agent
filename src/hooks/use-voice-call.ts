@@ -65,7 +65,17 @@ export function useVoiceCall({
     setTranscript([]);
 
     const { threadId: callThreadId } = optionsRef.current;
-    const player = new PcmPlayer(setIsSpeaking);
+    // The agent's audio plays out of the speakers and back into the mic.
+    // Forwarding that audio makes the model transcribe itself as the caller
+    // and answer, so the call scripts the caller's side on its own.
+    let agentSpeaking = false;
+    let heardAgent = false;
+    let callerMicOpen = false;
+    const player = new PcmPlayer((speaking) => {
+      agentSpeaking = speaking;
+      if (!speaking && heardAgent) callerMicOpen = true;
+      setIsSpeaking(speaking);
+    });
     let socket: WebSocket | undefined;
     let stopMic: (() => void) | undefined;
     let live = false;
@@ -119,6 +129,9 @@ export function useVoiceCall({
 
     try {
       const stop = await startMic((chunk) => {
+        // Stay closed until the greeting has finished, and stay closed while
+        // the agent is playing, so its voice is never sent back as the caller.
+        if (!callerMicOpen || agentSpeaking) return;
         if (!live || socket?.readyState !== WebSocket.OPEN) return;
         const message: VoiceClientMessage = { type: "audio", data: toBase64(chunk) };
         socket.send(JSON.stringify(message));
@@ -153,6 +166,7 @@ export function useVoiceCall({
             addTranscript(event.id, event.role, event.text);
             break;
           case "audio":
+            heardAgent = true;
             player.enqueue(event.data);
             break;
           case "interrupt":

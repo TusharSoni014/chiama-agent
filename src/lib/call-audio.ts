@@ -49,9 +49,10 @@ export class PcmPlayer {
     source.connect(this.context.destination);
     source.onended = () => {
       this.sources.delete(source);
-      // Short grace period so gaps between streamed chunks don't flicker.
+      // Short grace period so gaps between streamed chunks don't flicker,
+      // and the speaker tail is not picked up as the caller.
       if (this.sources.size === 0) {
-        this.idleTimer = setTimeout(() => this.onSpeakingChange(false), 250);
+        this.idleTimer = setTimeout(() => this.onSpeakingChange(false), 400);
       }
     };
 

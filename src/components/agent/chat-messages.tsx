@@ -9,8 +9,9 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Message, MessageContent } from "@/components/ui/message";
-import { Spinner } from "@/components/ui/spinner";
+import { AgentOrb } from "./agent-orb";
 import { ChatMessageItem } from "./chat-message-item";
 
 interface ChatMessagesProps {
@@ -42,11 +43,13 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
             {status === "submitted" && (
               <MessageScrollerItem messageId="pending-response">
                 <Message>
+                  <span className="flex size-8 shrink-0 items-center justify-center self-end">
+                    <AgentOrb state="searching" size={32} />
+                  </span>
                   <MessageContent>
-                    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Spinner />
-                      Thinking
-                    </span>
+                    <Bubble variant="muted">
+                      <BubbleContent>Thinking</BubbleContent>
+                    </Bubble>
                   </MessageContent>
                 </Message>
               </MessageScrollerItem>

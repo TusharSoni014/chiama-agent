@@ -2,11 +2,13 @@
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02Icon, CallEnd01Icon } from "@hugeicons/core-free-icons";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { OrbState } from "thinking-orbs";
 import { Badge } from "@/components/ui/badge";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent } from "@/components/ui/message";
+import { AgentOrb } from "../agent-orb";
+import { UserAvatar } from "../user-avatar";
 import {
   MessageScroller,
   MessageScrollerContent,
@@ -25,6 +27,15 @@ const STATUS_LABEL: Record<CallStatus, string> = {
   listening: "Listening",
   speaking: "Speaking",
   disconnected: "Disconnected",
+};
+
+const ORB_STATE: Record<CallStatus, OrbState> = {
+  idle: "breathing",
+  connecting: "connecting",
+  connected: "listening",
+  listening: "listening",
+  speaking: "composing",
+  disconnected: "breathing",
 };
 
 interface CallScreenProps {
@@ -47,10 +58,11 @@ export function CallScreen({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 flex-col items-center gap-2 px-4 pt-8 pb-4">
-        <Avatar className="size-16">
-          <AvatarImage src="/chiama.png" alt="Chiama" />
-          <AvatarFallback>C</AvatarFallback>
-        </Avatar>
+        <AgentOrb
+          state={ORB_STATE[status]}
+          size={64}
+          label={STATUS_LABEL[status]}
+        />
         <h2 className="text-base font-semibold tracking-tight">Chiama Agent</h2>
         <Badge
           variant={status === "listening" || status === "speaking" ? "default" : "secondary"}
@@ -81,12 +93,32 @@ export function CallScreen({
             <MessageScroller>
               <MessageScrollerViewport>
                 <MessageScrollerContent className="mx-auto w-full max-w-2xl px-4 py-4">
-                  {transcript.map(({ id, role, text }) => (
+                  {transcript.map(({ id, role, text }, index) => (
                     <MessageScrollerItem key={id} messageId={id}>
                       <Message align={role === "user" ? "end" : "start"}>
+                        {role === "user" ? (
+                          <UserAvatar className="self-end" />
+                        ) : (
+                          <span className="flex size-8 shrink-0 items-center justify-center self-end">
+                            <AgentOrb
+                              state={
+                                index === transcript.length - 1
+                                  ? ORB_STATE[status]
+                                  : "breathing"
+                              }
+                              size={32}
+                              paused={index !== transcript.length - 1}
+                              label={
+                                index === transcript.length - 1
+                                  ? undefined
+                                  : "Agent"
+                              }
+                            />
+                          </span>
+                        )}
                         <MessageContent>
                           <Bubble
-                            variant={role === "user" ? "secondary" : "ghost"}
+                            variant={role === "user" ? "secondary" : "muted"}
                             align={role === "user" ? "end" : "start"}
                           >
                             <BubbleContent className="whitespace-pre-wrap">

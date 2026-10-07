@@ -8,6 +8,14 @@ import { createVoiceAgent, getVoiceGreeting } from "./voice-agent";
 
 type Voice = Awaited<ReturnType<ReturnType<typeof createVoiceAgent>["getVoice"]>>;
 
+type RealtimeVoice = Voice & {
+  sendEvent: (type: string, data?: Record<string, unknown>) => void;
+};
+
+function asRealtime(voice: Voice): RealtimeVoice {
+  return voice as RealtimeVoice;
+}
+
 /** Per-connection handlers: browser audio -> OpenAI Realtime, and its audio/transcripts back. */
 export function createVoiceHandler(agentId: ChatAgentId) {
   let voice: Voice | undefined;
@@ -42,6 +50,22 @@ export function createVoiceHandler(agentId: ChatAgentId) {
           );
         });
 
+        // The speakers play into the microphone. Without this, that echo is
+        // transcribed as the caller and the model answers it, so the call
+        // scripts both sides by itself.
+        let agentResponding = false;
+        const clearCallerAudio = () =>
+          asRealtime(instance).sendEvent("input_audio_buffer.clear");
+
+        instance.on("response.created", () => {
+          agentResponding = true;
+          clearCallerAudio();
+        });
+        instance.on("response.done", () => {
+          agentResponding = false;
+          clearCallerAudio();
+        });
+
         // Pieces of both sides' speech. `response_id` is the same for every piece of
         // one turn (the item id for the caller, the response id for the agent), which
         // lets the browser keep a turn on one line even when it is cut or reordered.
@@ -52,6 +76,8 @@ export function createVoiceHandler(agentId: ChatAgentId) {
           };
           // A lone "\n" only marks the end of a turn.
           if (!text.trim() && text.includes("\n")) return;
+          // Echo of the agent, transcribed while it is still talking.
+          if (role !== "assistant" && agentResponding) return;
           send({
             type: "transcript",
             id: response_id,
@@ -62,9 +88,14 @@ export function createVoiceHandler(agentId: ChatAgentId) {
 
         // The caller started talking: stop playback and reserve their place in the
         // transcript, because their words are transcribed after the agent may already reply.
-        instance.on("input_audio_buffer.speech_started", (data) =>
-          send({ type: "interrupt", id: (data as { item_id?: string }).item_id })
-        );
+        // Speech detected during the agent's own turn is its echo, not the caller.
+        instance.on("input_audio_buffer.speech_started", (data) => {
+          if (agentResponding) {
+            clearCallerAudio();
+            return;
+          }
+          send({ type: "interrupt", id: (data as { item_id?: string }).item_id });
+        });
 
         // OpenAI protocol errors arrive as `{ error: { message } }`.
         instance.on(
@@ -81,8 +112,32 @@ export function createVoiceHandler(agentId: ChatAgentId) {
         await instance.connect();
         if (closed) return instance.close?.();
 
+        // Don't let detected noise cancel the agent and invent a caller turn.
+        instance.updateConfig({
+          type: "realtime",
+          audio: {
+            input: {
+              transcription: { model: "whisper-1" },
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.7,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 700,
+                create_response: true,
+                interrupt_response: false,
+              },
+            },
+          },
+        });
+
         send({ type: "ready" });
-        await instance.speak(getVoiceGreeting(agentId));
+        // Say the greeting and stop. `speak()` tells the model to "repeat the
+        // following text", which makes it keep going and role-play the caller.
+        asRealtime(instance).sendEvent("response.create", {
+          response: {
+            instructions: `Say exactly the greeting below, then stop and wait for the caller. Do not invent, repeat, or role-play anything the caller says.\n\n${getVoiceGreeting(agentId)}`,
+          },
+        });
       } catch (error) {
         console.error("[voice] failed to start:", error);
         send({

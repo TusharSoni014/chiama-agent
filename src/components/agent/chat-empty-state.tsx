@@ -1,9 +1,8 @@
 "use client";
 
 import { memo } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { SunCloud01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import { AgentOrb } from "./agent-orb";
 import {
   Empty,
   EmptyContent,
@@ -86,6 +85,9 @@ export const ChatEmptyState = memo(
     return (
       <Empty className="mx-auto max-w-2xl">
         <EmptyHeader>
+          <EmptyMedia>
+            <AgentOrb state="breathing" size={64} label="Agent" />
+          </EmptyMedia>
           <EmptyTitle>
             <AnimatePresence mode="popLayout">
               <motion.div
