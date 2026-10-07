@@ -13,6 +13,7 @@ import { UserAvatar } from "./user-avatar";
 interface ChatMessageItemProps {
   message: UIMessage;
   isStreaming?: boolean;
+  isPending?: boolean;
 }
 
 const RUNNING_TOOL_STATES = new Set(["input-streaming", "input-available"]);
@@ -20,19 +21,24 @@ const RUNNING_TOOL_STATES = new Set(["input-streaming", "input-available"]);
 function agentOrbState(
   message: UIMessage,
   isStreaming: boolean,
+  isPending: boolean,
 ): { state: OrbState; paused: boolean } {
   const isUsingTool = message.parts.some(
     (part) => isToolUIPart(part) && RUNNING_TOOL_STATES.has(part.state),
   );
-  if (isUsingTool) return { state: "searching", paused: false };
+  if (isUsingTool || isPending) return { state: "searching", paused: false };
   if (isStreaming) return { state: "composing", paused: false };
   return { state: "breathing", paused: true };
 }
 
 export const ChatMessageItem = memo(
-  ({ message, isStreaming = false }: ChatMessageItemProps) => {
+  ({
+    message,
+    isStreaming = false,
+    isPending = false,
+  }: ChatMessageItemProps) => {
     const isUser = message.role === "user";
-    const orb = isUser ? null : agentOrbState(message, isStreaming);
+    const orb = isUser ? null : agentOrbState(message, isStreaming, isPending);
 
     return (
       <Message align={isUser ? "end" : "start"}>

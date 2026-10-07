@@ -21,6 +21,9 @@ interface ChatMessagesProps {
 
 export function ChatMessages({ messages, status }: ChatMessagesProps) {
   const lastIndex = messages.length - 1;
+  const lastMessage = messages[lastIndex];
+  const showThinking =
+    status === "submitted" && lastMessage?.role !== "assistant";
 
   return (
     <MessageScrollerProvider autoScroll>
@@ -36,11 +39,12 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
                 <ChatMessageItem
                   message={message}
                   isStreaming={status === "streaming" && index === lastIndex}
+                  isPending={status === "submitted" && index === lastIndex}
                 />
               </MessageScrollerItem>
             ))}
 
-            {status === "submitted" && (
+            {showThinking && (
               <MessageScrollerItem messageId="pending-response">
                 <Message>
                   <span className="flex size-8 shrink-0 items-center justify-center self-end">

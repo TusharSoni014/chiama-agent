@@ -6,7 +6,9 @@ import type {
 import type { ChatAgentId } from "../src/lib/chat-agents";
 import { createVoiceAgent, getVoiceGreeting } from "./voice-agent";
 
-type Voice = Awaited<ReturnType<ReturnType<typeof createVoiceAgent>["getVoice"]>>;
+type Voice = Awaited<
+  ReturnType<ReturnType<typeof createVoiceAgent>["getVoice"]>
+>;
 
 type RealtimeVoice = Voice & {
   sendEvent: (type: string, data?: Record<string, unknown>) => void;
@@ -36,7 +38,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
       try {
         if (!process.env.OPENAI_API_KEY) {
           throw new Error(
-            "OPENAI_API_KEY is missing. Add it to .env and restart `npm run dev:voice`."
+            "OPENAI_API_KEY is missing. Add it to .env and restart `npm run dev:voice`.",
           );
         }
 
@@ -46,7 +48,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
 
         instance.on("speaker", (stream: NodeJS.ReadableStream) => {
           stream.on("data", (chunk: Buffer) =>
-            send({ type: "audio", data: chunk.toString("base64") })
+            send({ type: "audio", data: chunk.toString("base64") }),
           );
         });
 
@@ -70,14 +72,10 @@ export function createVoiceHandler(agentId: ChatAgentId) {
         // one turn (the item id for the caller, the response id for the agent), which
         // lets the browser keep a turn on one line even when it is cut or reordered.
         instance.on("writing", (data) => {
-          // The typed event only lists text and role; OpenAI also sends the turn id.
           const { text, role, response_id } = data as typeof data & {
             response_id: string;
           };
-          // A lone "\n" only marks the end of a turn.
           if (!text.trim() && text.includes("\n")) return;
-          // Echo of the agent, transcribed while it is still talking.
-          if (role !== "assistant" && agentResponding) return;
           send({
             type: "transcript",
             id: response_id,
@@ -94,7 +92,10 @@ export function createVoiceHandler(agentId: ChatAgentId) {
             clearCallerAudio();
             return;
           }
-          send({ type: "interrupt", id: (data as { item_id?: string }).item_id });
+          send({
+            type: "interrupt",
+            id: (data as { item_id?: string }).item_id,
+          });
         });
 
         // OpenAI protocol errors arrive as `{ error: { message } }`.
@@ -106,7 +107,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
               type: "error",
               message: error.error?.message ?? error.message ?? "Voice error",
             });
-          }
+          },
         );
 
         await instance.connect();
@@ -143,7 +144,9 @@ export function createVoiceHandler(agentId: ChatAgentId) {
         send({
           type: "error",
           message:
-            error instanceof Error ? error.message : "Could not start the call.",
+            error instanceof Error
+              ? error.message
+              : "Could not start the call.",
         });
         ws.close(1011, "Could not start the call");
         hangUp();
@@ -162,8 +165,8 @@ export function createVoiceHandler(agentId: ChatAgentId) {
         const pcm = new Int16Array(
           bytes.buffer.slice(
             bytes.byteOffset,
-            bytes.byteOffset + bytes.byteLength - (bytes.byteLength % 2)
-          )
+            bytes.byteOffset + bytes.byteLength - (bytes.byteLength % 2),
+          ),
         );
         await voice.send(pcm);
       } catch (error) {
