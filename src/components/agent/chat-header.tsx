@@ -68,7 +68,9 @@ export const ChatHeader = memo(
                 <DropdownMenuRadioGroup
                   value={agentId}
                   onValueChange={(value) => {
-                    if (isChatAgentId(value)) setSelectedAgentId(value);
+                    if (!isChatAgentId(value) || value === agentId) return;
+                    setSelectedAgentId(value);
+                    onNewChat();
                   }}
                 >
                   {CHAT_AGENTS.map((agent) => (
