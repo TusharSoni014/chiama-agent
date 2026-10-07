@@ -5,7 +5,10 @@ import { cors } from "hono/cors";
 import { DEFAULT_CHAT_AGENT_ID, isChatAgentId } from "../src/lib/chat-agents";
 import { createVoiceHandler } from "./voice-handler";
 
-const PORT = Number(process.env.VOICE_SERVER_PORT ?? 3001);
+const PORT = Number(
+  process.env.PORT ?? process.env.VOICE_SERVER_PORT ?? 3001,
+);
+const HOST = process.env.HOST ?? "0.0.0.0";
 const APP_ORIGIN = process.env.VOICE_ALLOWED_ORIGIN ?? "http://localhost:3000";
 
 const app = new Hono();
@@ -33,7 +36,7 @@ app.get(
   })
 );
 
-const server = serve({ fetch: app.fetch, port: PORT }, () =>
-  console.log(`Voice server on http://localhost:${PORT} (ws: /ws/voice)`)
+const server = serve({ fetch: app.fetch, port: PORT, hostname: HOST }, () =>
+  console.log(`Voice server on http://${HOST}:${PORT} (ws: /ws/voice)`),
 );
 injectWebSocket(server);

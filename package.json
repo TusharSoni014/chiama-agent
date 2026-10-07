@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:voice": "tsx watch --env-file=.env server/index.ts",
+    "start:voice": "tsx server/index.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -60,6 +61,7 @@
     "tokenlens": "^1.3.1",
     "tw-animate-css": "^1.4.0",
     "use-stick-to-bottom": "^1.1.6",
+    "tsx": "^4.23.15",
     "ws": "^8.22.0",
     "zod": "^4.6.5",
     "zustand": "^5.0.15"
@@ -75,7 +77,6 @@
     "eslint-config-next": "16.3.8",
     "prisma": "^8.0.0-rc.20",
     "tailwindcss": "^4",
-    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
