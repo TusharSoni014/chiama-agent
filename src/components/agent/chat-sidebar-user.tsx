@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -26,19 +26,13 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgentStore } from "@/stores/agent-store";
-import { HelpDialog } from "./help-dialog";
 import { UserSettingsDialog } from "./user-settings-dialog";
 
 export function ChatSidebarUser() {
   const { data: session, status } = useSession();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const helpOpen = useAgentStore((state) => state.helpOpen);
   const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
   const signedIn = Boolean(session?.user);
-
-  useEffect(() => {
-    if (status === "unauthenticated") setHelpOpen(true);
-  }, [status, setHelpOpen]);
 
   if (status === "loading") {
     return <Skeleton className="h-12 w-full" />;
@@ -116,11 +110,6 @@ export function ChatSidebarUser() {
           />
         </SidebarMenu>
       )}
-      <HelpDialog
-        open={helpOpen}
-        onOpenChange={setHelpOpen}
-        signedIn={signedIn}
-      />
     </>
   );
 }

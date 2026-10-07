@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useAgentStore } from "@/stores/agent-store";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useChatThreads } from "@/hooks/use-chat-threads";
 import { toChatTitle } from "@/lib/chat-title";
 import { ChatCommandDialog } from "./chat-command-dialog";
 import { ChatDeleteDialog } from "./chat-delete-dialog";
+import { HelpDialog } from "./help-dialog";
 import { ChatHeader } from "./chat-header";
 import { ChatSession } from "./chat-session";
 import { ChatSidebar } from "./chat-sidebar";
@@ -29,6 +31,11 @@ export function AgentWorkspace() {
   const [view, setView] = useState<AgentView>("chat");  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
+  useEffect(() => {
+    if (sessionStatus === "unauthenticated") setHelpOpen(true);
+  }, [sessionStatus, setHelpOpen]);
 
   const activeChatId = activeChat.id;
 
@@ -139,6 +146,8 @@ export function AgentWorkspace() {
         onSelectThread={handleSelectThread}
         onNewChat={handleNewChat}
       />
+
+      <HelpDialog signedIn={isSignedIn} />
 
       <ChatDeleteDialog
         thread={threadToDelete}

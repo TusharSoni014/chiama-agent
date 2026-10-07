@@ -19,10 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAgentStore } from "@/stores/agent-store";
 
 interface HelpDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   signedIn: boolean;
 }
 
@@ -48,17 +47,20 @@ function Tip({
   );
 }
 
-export function HelpDialog({ open, onOpenChange, signedIn }: HelpDialogProps) {
+export function HelpDialog({ signedIn }: HelpDialogProps) {
+  const open = useAgentStore((state) => state.helpOpen);
+  const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+    <Dialog open={open} onOpenChange={setHelpOpen}>
+      <DialogContent className="flex max-h-[80dvh] flex-col overflow-hidden sm:max-w-lg">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Make Chiama yours</DialogTitle>
           <DialogDescription>
             A few shortcuts so chat, calls, and history stay out of the way.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
           {!signedIn && (
             <div className="flex gap-3 rounded-2xl bg-primary p-3 text-primary-foreground ring-1 ring-primary">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15 [&_svg]:size-4">
