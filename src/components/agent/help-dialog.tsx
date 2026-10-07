@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { signIn } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Bookmark02Icon,
@@ -11,7 +10,7 @@ import {
   SearchIcon,
 } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "./google-sign-in-button";
 import {
   Dialog,
   DialogContent,
@@ -75,15 +74,11 @@ export function HelpDialog({ signedIn }: HelpDialogProps) {
                     Keep threads, memory, and your place across devices.
                   </p>
                 </div>
-                <Button
+                <GoogleSignInButton
                   size="sm"
                   variant="secondary"
                   className="w-fit"
-                  onClick={() => signIn("google")}
-                >
-                  <HugeiconsIcon icon={Login01Icon} data-icon="inline-start" />
-                  Sign in with Google
-                </Button>
+                />
               </div>
             </div>
           )}

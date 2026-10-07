@@ -1,16 +1,16 @@
 "use client";
 
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   HelpCircleIcon,
-  Login01Icon,
   Logout01Icon,
   Settings02Icon,
   UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "./google-sign-in-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,14 +40,7 @@ export function ChatSidebarUser() {
     <>
       {!signedIn ? (
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="min-w-0 flex-1"
-            onClick={() => signIn("google")}
-          >
-            <HugeiconsIcon icon={Login01Icon} data-icon="inline-start" />
-            Sign in with Google
-          </Button>
+          <GoogleSignInButton variant="outline" className="min-w-0 flex-1" />
           <Button
             variant="outline"
             size="icon"
