@@ -6,7 +6,9 @@ import { useChat } from "@ai-sdk/react";
 import { useAgentStore } from "@/stores/agent-store";
 import {
   getStoredOpenAIKey,
+  isOpenAIUsageLimitError,
   OPENAI_KEY_HEADER,
+  USAGE_LIMIT_HELP,
 } from "@/lib/openai-key-storage";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatErrorAlert } from "./chat-error-alert";
@@ -81,6 +83,12 @@ export function ChatConversation({
     setInput("");
   }, [input, send]);
 
+  const setSettingsOpen = useAgentStore((state) => state.setSettingsOpen);
+  const usageLimit =
+    Boolean(error) &&
+    !getStoredOpenAIKey() &&
+    isOpenAIUsageLimitError(error?.message ?? "");
+
   const handleRetry = useCallback(() => {
     clearError();
     void regenerate({ body: { agentId } });
@@ -101,9 +109,16 @@ export function ChatConversation({
       {error && (
         <div className="mx-auto w-full max-w-3xl px-4 pb-2">
           <ChatErrorAlert
-            title="Message failed"
-            error={error}
-            onRetry={messages.length > 0 ? handleRetry : undefined}
+            title={usageLimit ? "Usage limit reached" : "Message failed"}
+            error={usageLimit ? new Error(USAGE_LIMIT_HELP) : error}
+            retryLabel={usageLimit ? "Add OpenAI key" : undefined}
+            onRetry={
+              usageLimit
+                ? () => setSettingsOpen(true)
+                : messages.length > 0
+                  ? handleRetry
+                  : undefined
+            }
             onDismiss={clearError}
           />
         </div>

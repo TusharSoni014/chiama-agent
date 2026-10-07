@@ -7,6 +7,8 @@ interface AgentStore {
   setSelectedAgentId: (agentId: ChatAgentId) => void;
   helpOpen: boolean;
   setHelpOpen: (open: boolean) => void;
+  settingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
 }
 
 export const useAgentStore = create<AgentStore>((set) => ({
@@ -14,4 +16,6 @@ export const useAgentStore = create<AgentStore>((set) => ({
   setSelectedAgentId: (selectedAgentId) => set({ selectedAgentId }),
   helpOpen: false,
   setHelpOpen: (helpOpen) => set({ helpOpen }),
+  settingsOpen: false,
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
 }));

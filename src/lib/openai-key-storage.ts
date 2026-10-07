@@ -35,3 +35,13 @@ export function setStoredOpenAIKey(key: string) {
 export function clearStoredOpenAIKey() {
   window.localStorage.removeItem(STORAGE_KEY);
 }
+
+/** Quota / rate-limit errors from OpenAI (and similar providers). */
+export function isOpenAIUsageLimitError(message: string) {
+  return /rate.?limit|too many requests|insufficient.?quota|exceeded your current quota|quota.?exceeded|exhausted|billing|429/i.test(
+    message,
+  );
+}
+
+export const USAGE_LIMIT_HELP =
+  "This agent's usage limit was reached. Add your own OpenAI key in Settings to keep going.";

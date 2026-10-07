@@ -18,6 +18,12 @@ import {
 } from "@/components/ui/message-scroller";
 import { Spinner } from "@/components/ui/spinner";
 import { useVoiceCall, type CallStatus } from "@/hooks/use-voice-call";
+import {
+  getStoredOpenAIKey,
+  isOpenAIUsageLimitError,
+  USAGE_LIMIT_HELP,
+} from "@/lib/openai-key-storage";
+import { useAgentStore } from "@/stores/agent-store";
 import { ChatErrorAlert } from "../chat-error-alert";
 
 const STATUS_LABEL: Record<CallStatus, string> = {
@@ -54,6 +60,11 @@ export function CallScreen({
 }: CallScreenProps) {
   const { status, isActive, transcript, error, start, end, dismissError } =
     useVoiceCall({ threadId, onSaved: onTranscriptSaved, persist });
+  const setSettingsOpen = useAgentStore((state) => state.setSettingsOpen);
+  const askForKey =
+    Boolean(error) &&
+    !getStoredOpenAIKey() &&
+    (error === USAGE_LIMIT_HELP || isOpenAIUsageLimitError(error ?? ""));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -76,8 +87,10 @@ export function CallScreen({
       {error && (
         <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pb-3">
           <ChatErrorAlert
-            title="Call problem"
-            error={new Error(error)}
+            title={askForKey ? "Usage limit reached" : "Call problem"}
+            error={new Error(askForKey ? USAGE_LIMIT_HELP : error)}
+            retryLabel={askForKey ? "Add OpenAI key" : undefined}
+            onRetry={askForKey ? () => setSettingsOpen(true) : undefined}
             onDismiss={dismissError}
           />
         </div>

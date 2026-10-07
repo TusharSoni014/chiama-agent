@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -26,12 +25,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgentStore } from "@/stores/agent-store";
-import { UserSettingsDialog } from "./user-settings-dialog";
 
 export function ChatSidebarUser() {
   const { data: session, status } = useSession();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const setHelpOpen = useAgentStore((state) => state.setHelpOpen);
+  const setSettingsOpen = useAgentStore((state) => state.setSettingsOpen);
   const signedIn = Boolean(session?.user);
 
   if (status === "loading") {
@@ -104,10 +102,6 @@ export function ChatSidebarUser() {
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-          <UserSettingsDialog
-            open={settingsOpen}
-            onOpenChange={setSettingsOpen}
-          />
         </SidebarMenu>
       )}
     </>

@@ -15,6 +15,7 @@ interface ChatErrorAlertProps {
   title: string;
   error: Error;
   onRetry?: () => void;
+  retryLabel?: string;
   onDismiss?: () => void;
 }
 
@@ -47,6 +48,7 @@ export function ChatErrorAlert({
   title,
   error,
   onRetry,
+  retryLabel = "Retry",
   onDismiss,
 }: ChatErrorAlertProps) {
   const hasActions = Boolean(onRetry || onDismiss);
@@ -54,7 +56,7 @@ export function ChatErrorAlert({
   return (
     <Alert
       variant="destructive"
-      className={cn(hasActions && "has-data-[slot=alert-action]:pr-28")}
+      className={cn(hasActions && "has-data-[slot=alert-action]:pr-36")}
     >
       <HugeiconsIcon icon={Alert02Icon} />
       <AlertTitle>{title}</AlertTitle>
@@ -63,7 +65,7 @@ export function ChatErrorAlert({
         <AlertAction className="flex items-center gap-1">
           {onRetry && (
             <Button variant="outline" size="xs" onClick={onRetry}>
-              Retry
+              {retryLabel}
             </Button>
           )}
           {onDismiss && (

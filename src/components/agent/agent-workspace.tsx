@@ -9,6 +9,7 @@ import { toChatTitle } from "@/lib/chat-title";
 import { ChatCommandDialog } from "./chat-command-dialog";
 import { ChatDeleteDialog } from "./chat-delete-dialog";
 import { HelpDialog } from "./help-dialog";
+import { UserSettingsDialog } from "./user-settings-dialog";
 import { ChatHeader } from "./chat-header";
 import { ChatSession } from "./chat-session";
 import { ChatSidebar } from "./chat-sidebar";
@@ -148,6 +149,7 @@ export function AgentWorkspace() {
       />
 
       <HelpDialog signedIn={isSignedIn} />
+      <UserSettingsDialog />
 
       <ChatDeleteDialog
         thread={threadToDelete}

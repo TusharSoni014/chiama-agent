@@ -17,11 +17,7 @@ import {
   parseOpenAIKey,
   setStoredOpenAIKey,
 } from "@/lib/openai-key-storage";
-
-interface UserSettingsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+import { useAgentStore } from "@/stores/agent-store";
 
 /** Mounted only while the dialog is open, so state starts fresh each time. */
 function OpenAIKeyForm({ onDone }: { onDone: () => void }) {
@@ -85,18 +81,18 @@ function OpenAIKeyForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-export function UserSettingsDialog({
-  open,
-  onOpenChange,
-}: UserSettingsDialogProps) {
+export function UserSettingsDialog() {
+  const open = useAgentStore((state) => state.settingsOpen);
+  const setSettingsOpen = useAgentStore((state) => state.setSettingsOpen);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setSettingsOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>Manage your account preferences.</DialogDescription>
         </DialogHeader>
-        <OpenAIKeyForm onDone={() => onOpenChange(false)} />
+        {open && <OpenAIKeyForm onDone={() => setSettingsOpen(false)} />}
       </DialogContent>
     </Dialog>
   );

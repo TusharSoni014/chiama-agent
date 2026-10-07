@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PcmPlayer, startMic } from "@/lib/call-audio";
 import { useAgentStore } from "@/stores/agent-store";
-import { getStoredOpenAIKey } from "@/lib/openai-key-storage";
+import {
+  getStoredOpenAIKey,
+  isOpenAIUsageLimitError,
+  USAGE_LIMIT_HELP,
+} from "@/lib/openai-key-storage";
 import type {
   VoiceClientMessage,
   VoiceRole,
@@ -36,6 +40,9 @@ interface UseVoiceCallOptions {
 const VOICE_WS_URL = `${
   process.env.NEXT_PUBLIC_VOICE_WS_URL ?? "ws://localhost:3001"
 }/ws/voice`;
+
+/** Give the voice server this long to accept the socket and send `ready`. */
+const CONNECT_TIMEOUT_MS = 10_000;
 
 function toBase64(buffer: ArrayBuffer) {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -79,6 +86,7 @@ export function useVoiceCall({
     });
     let socket: WebSocket | undefined;
     let stopMic: (() => void) | undefined;
+    let connectTimer: ReturnType<typeof setTimeout> | undefined;
     let live = false;
     let closed = false;
     // One line per spoken turn, kept in the order the turns started.
@@ -107,6 +115,7 @@ export function useVoiceCall({
     const hangUp = (message?: string) => {
       if (closed) return;
       closed = true;
+      if (connectTimer) clearTimeout(connectTimer);
       socket?.close(); // closing the socket also ends the call on the server
       stopMic?.();
       player.close();
@@ -145,6 +154,11 @@ export function useVoiceCall({
       socket = new WebSocket(
         `${VOICE_WS_URL}?agentId=${encodeURIComponent(selectedAgentId)}`
       );
+      connectTimer = setTimeout(() => {
+        hangUp(
+          "Could not connect to the agent. The voice server did not respond in time.",
+        );
+      }, CONNECT_TIMEOUT_MS);
       // The server waits for this before it opens the call.
       socket.onopen = () => {
         const openaiKey = getStoredOpenAIKey() ?? undefined;
@@ -155,7 +169,7 @@ export function useVoiceCall({
         hangUp(
           live
             ? "Lost connection to the agent."
-            : "Could not reach the voice server. Is it running?"
+            : "Could not reach the voice server. Check that it is running and try again.",
         );
       socket.onmessage = ({ data }) => {
         const event = JSON.parse(data as string) as VoiceServerMessage;
@@ -163,6 +177,7 @@ export function useVoiceCall({
         switch (event.type) {
           case "ready":
             live = true;
+            if (connectTimer) clearTimeout(connectTimer);
             setPhase("connected");
             setTimeout(
               () => setPhase((p) => (p === "connected" ? "listening" : p)),
@@ -182,7 +197,11 @@ export function useVoiceCall({
             if (event.id) addTranscript(event.id, "user", "");
             break;
           case "error":
-            setError(event.message);
+            setError(
+              !getStoredOpenAIKey() && isOpenAIUsageLimitError(event.message)
+                ? USAGE_LIMIT_HELP
+                : event.message,
+            );
             break;
         }
       };
