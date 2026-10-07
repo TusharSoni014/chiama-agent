@@ -10,6 +10,7 @@ import {
   getChatMemory,
   getChatResourceId,
   getErrorMessage,
+  resolveChatAgentId,
 } from "@/lib/chat-server";
 
 export async function POST(req: Request) {
@@ -46,14 +47,16 @@ export async function POST(req: Request) {
       }
     }
 
+    const { agentId: requestedAgentId, ...chatParams } = params;
+
     const stream = await handleChatStream({
       mastra,
-      agentId: CHAT_AGENT_ID,
+      agentId: resolveChatAgentId(requestedAgentId),
       version: "v7",
       params: {
-        ...params,
+        ...chatParams,
         memory: {
-          ...params.memory,
+          ...chatParams.memory,
           thread: threadId,
           resource: resourceId,
         },

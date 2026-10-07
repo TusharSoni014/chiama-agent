@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useChat } from "@ai-sdk/react";
+import { useAgentStore } from "@/stores/agent-store";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatErrorAlert } from "./chat-error-alert";
 import { ChatInput } from "./chat-input";
@@ -23,6 +24,8 @@ export function ChatConversation({
   onMessageSent,
   onTurnFinished,
 }: ChatConversationProps) {
+  // Read at send time, so the agent can change mid-conversation.
+  const agentId = useAgentStore((state) => state.selectedAgentId);
   const [input, setInput] = useState("");
 
   const transport = useMemo(
@@ -51,10 +54,10 @@ export function ChatConversation({
       if (!trimmed || isBusy) return;
 
       clearError();
-      void sendMessage({ text: trimmed });
+      void sendMessage({ text: trimmed }, { body: { agentId } });
       onMessageSent(trimmed);
     },
-    [isBusy, clearError, sendMessage, onMessageSent]
+    [isBusy, clearError, sendMessage, onMessageSent, agentId]
   );
 
   const handleSubmit = useCallback(() => {
@@ -64,8 +67,8 @@ export function ChatConversation({
 
   const handleRetry = useCallback(() => {
     clearError();
-    void regenerate();
-  }, [clearError, regenerate]);
+    void regenerate({ body: { agentId } });
+  }, [clearError, regenerate, agentId]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

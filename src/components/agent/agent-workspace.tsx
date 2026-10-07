@@ -3,8 +3,7 @@
 import { useCallback, useState } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useChatThreads } from "@/hooks/use-chat-threads";
-import { toChatTitle } from "@/lib/chat-title";
-import { ChatDeleteDialog } from "./chat-delete-dialog";
+import { toChatTitle } from "@/lib/chat-title";import { ChatDeleteDialog } from "./chat-delete-dialog";
 import { ChatHeader } from "./chat-header";
 import { ChatSession } from "./chat-session";
 import { ChatSidebar } from "./chat-sidebar";
@@ -22,8 +21,7 @@ export function AgentWorkspace() {
 
   // Always start on a fresh draft so there is a valid thread id before the first message.
   const [activeChat, setActiveChat] = useState<ActiveChat>(createDraftChat);
-  const [view, setView] = useState<AgentView>("chat");
-  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
+  const [view, setView] = useState<AgentView>("chat");  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 

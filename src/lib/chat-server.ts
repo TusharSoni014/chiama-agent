@@ -2,7 +2,15 @@ import { mastra } from "@/mastra";
 import { auth } from "@/lib/auth";
 import { DEFAULT_CHAT_TITLE, toChatTitle } from "@/lib/chat-title";
 
-export const CHAT_AGENT_ID = "weather-agent";
+import { DEFAULT_CHAT_AGENT_ID, isChatAgentId } from "@/lib/chat-agents";
+
+/** Agent whose memory is used to read/write threads (storage is shared by all agents). */
+export const CHAT_AGENT_ID = DEFAULT_CHAT_AGENT_ID;
+
+/** Agent that should answer a request; falls back to the default if unknown. */
+export function resolveChatAgentId(value: unknown) {
+  return isChatAgentId(value) ? value : DEFAULT_CHAT_AGENT_ID;
+}
 
 const DEFAULT_RESOURCE = "weather-chat";
 

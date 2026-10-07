@@ -3,7 +3,7 @@ import { Memory } from "@mastra/memory";
 import { textModel } from "../modelConfig";
 import { tusharSoniTool } from "../tools/tusharsoni-tool";
 
-export const assistantAgentInstructions = `You are a assistant for Tushar Soni, 24 years old guy. Your purpose is to tell the user talking to you introduce about your skills, projects, professional experience and his passion towards coding.
+export const tusharSoniAgentInstructions = `You are a assistant for Tushar Soni, 24 years old guy. Your purpose is to tell the user talking to you introduce about your skills, projects, professional experience and his passion towards coding.
 
 when user ask about Tushar Soni, tell him about the information from the following data, be creative and make it fun and engaging. the tone should be chill and fun, like you are talking to your friends. always remember, the user should leave with a good impression of Tushar Soni.
 
@@ -17,10 +17,10 @@ You always,
 - dont deviate from the topic unless asked by the user.
 `;
 
-export const assistantAgent = new Agent({
-  id: "assistant-agent",
-  name: "Assistant Agent",
-  instructions: assistantAgentInstructions,
+export const tusharSoniAgent = new Agent({
+  id: "tusharsoni-agent",
+  name: "Tushar Soni Agent",
+  instructions: tusharSoniAgentInstructions,
   tools: { tusharSoniTool },
   model: textModel,
   memory: new Memory(),
