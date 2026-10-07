@@ -4,6 +4,7 @@ import type {
   VoiceServerMessage,
 } from "../src/lib/voice-protocol";
 import type { ChatAgentId } from "../src/lib/chat-agents";
+import { parseOpenAIKey } from "../src/lib/openai-key-storage";
 import { createVoiceAgent, getVoiceGreeting } from "./voice-agent";
 
 type Voice = Awaited<
@@ -175,9 +176,9 @@ export function createVoiceHandler(agentId: ChatAgentId) {
           started = true;
           const key =
             typeof message.openaiKey === "string"
-              ? message.openaiKey.trim()
-              : "";
-          await startCall(key || undefined);
+              ? parseOpenAIKey(message.openaiKey)
+              : null;
+          await startCall(key ?? undefined);
           return;
         }
 

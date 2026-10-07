@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import {
   clearStoredOpenAIKey,
   getStoredOpenAIKey,
+  parseOpenAIKey,
   setStoredOpenAIKey,
 } from "@/lib/openai-key-storage";
 
@@ -27,10 +28,12 @@ function OpenAIKeyForm({ onDone }: { onDone: () => void }) {
   const [draft, setDraft] = useState("");
   const [hasKey, setHasKey] = useState(() => Boolean(getStoredOpenAIKey()));
 
+  const parsed = parseOpenAIKey(draft);
+  const showInvalid = draft.trim().length > 0 && !parsed;
+
   const handleSave = () => {
-    const key = draft.trim();
-    if (!key) return;
-    setStoredOpenAIKey(key);
+    if (!parsed) return;
+    setStoredOpenAIKey(parsed);
     onDone();
   };
 
@@ -56,10 +59,17 @@ function OpenAIKeyForm({ onDone }: { onDone: () => void }) {
         type="password"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        placeholder={hasKey ? "Key saved in this browser" : "sk-..."}
+        placeholder={hasKey ? "Key saved in this browser" : "sk-proj-..."}
         autoComplete="off"
         spellCheck={false}
+        aria-invalid={showInvalid || undefined}
+        aria-describedby={showInvalid ? "openai-key-error" : undefined}
       />
+      {showInvalid && (
+        <p id="openai-key-error" className="text-xs text-destructive">
+          Enter a valid OpenAI key (starts with sk- or sk-proj-).
+        </p>
+      )}
 
       <DialogFooter className="mt-4">
         {hasKey && (
@@ -67,7 +77,7 @@ function OpenAIKeyForm({ onDone }: { onDone: () => void }) {
             Remove key
           </Button>
         )}
-        <Button type="submit" disabled={!draft.trim()}>
+        <Button type="submit" disabled={!parsed}>
           Save
         </Button>
       </DialogFooter>
