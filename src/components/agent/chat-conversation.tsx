@@ -8,6 +8,7 @@ import { ChatEmptyState } from "./chat-empty-state";
 import { ChatErrorAlert } from "./chat-error-alert";
 import { ChatInput } from "./chat-input";
 import { ChatMessages } from "./chat-messages";
+import { ChatAgentId } from "@/lib/chat-agents";
 
 interface ChatConversationProps {
   threadId: string;
@@ -18,6 +19,11 @@ interface ChatConversationProps {
   onTurnFinished: () => void;
 }
 
+const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
+  "weather-agent": "Ask about the weather in any city",
+  "tusharsoni-agent": "Ask abything about Tushar Soni",
+};
+
 export function ChatConversation({
   threadId,
   initialMessages,
@@ -27,6 +33,7 @@ export function ChatConversation({
   // Read at send time, so the agent can change mid-conversation.
   const agentId = useAgentStore((state) => state.selectedAgentId);
   const [input, setInput] = useState("");
+  const { selectedAgentId } = useAgentStore();
 
   const transport = useMemo(
     () =>
@@ -34,7 +41,7 @@ export function ChatConversation({
         api: "/api/chat",
         body: { threadId },
       }),
-    [threadId]
+    [threadId],
   );
 
   const { messages, sendMessage, regenerate, stop, status, error, clearError } =
@@ -57,7 +64,7 @@ export function ChatConversation({
       void sendMessage({ text: trimmed }, { body: { agentId } });
       onMessageSent(trimmed);
     },
-    [isBusy, clearError, sendMessage, onMessageSent, agentId]
+    [isBusy, clearError, sendMessage, onMessageSent, agentId],
   );
 
   const handleSubmit = useCallback(() => {
@@ -94,6 +101,7 @@ export function ChatConversation({
       )}
 
       <ChatInput
+        placeholder={AGENT_PLACEHOLDERS[selectedAgentId]}
         value={input}
         onValueChange={setInput}
         onSubmit={handleSubmit}

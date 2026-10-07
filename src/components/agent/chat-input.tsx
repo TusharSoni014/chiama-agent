@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, type KeyboardEvent } from "react";
+import { memo, useState, type KeyboardEvent } from "react";
+import { cn } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons";
 import {
@@ -28,6 +29,7 @@ export const ChatInput = memo(
     isBusy,
     placeholder = "Ask about the weather in any city",
   }: ChatInputProps) => {
+    const [isMultiline, setIsMultiline] = useState(false);
     const canSend = value.trim().length > 0 && !isBusy;
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -41,8 +43,14 @@ export const ChatInput = memo(
 
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-4">
-        <InputGroup className="h-auto">
+        <InputGroup
+          className={cn(
+            "h-auto transition-[border-radius,color,box-shadow,border-color] duration-200",
+            isMultiline ? "has-[textarea]:rounded-lg" : "has-[textarea]:rounded-4xl"
+          )}
+        >
           <AutoGrowTextarea
+            onMultilineChange={setIsMultiline}
             autoFocus
             value={value}
             onChange={(event) => onValueChange(event.target.value)}

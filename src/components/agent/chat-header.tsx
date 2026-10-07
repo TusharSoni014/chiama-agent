@@ -22,6 +22,7 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { CHAT_AGENTS, isChatAgentId } from "@/lib/chat-agents";
 import { useAgentStore } from "@/stores/agent-store";
 import type { AgentView } from "./types";
+import { AnimatePresence, motion } from "motion/react";
 
 interface ChatHeaderProps {
   view: AgentView;
@@ -33,7 +34,7 @@ export const ChatHeader = memo(
   ({ view, onNewChat, onViewChange }: ChatHeaderProps) => {
     const agentId = useAgentStore((state) => state.selectedAgentId);
     const setSelectedAgentId = useAgentStore(
-      (state) => state.setSelectedAgentId
+      (state) => state.setSelectedAgentId,
     );
     const { state, isMobile } = useSidebar();
     const showNewChat = view === "chat" && (isMobile || state === "collapsed");
@@ -69,7 +70,11 @@ export const ChatHeader = memo(
                   }}
                 >
                   {CHAT_AGENTS.map((agent) => (
-                    <DropdownMenuRadioItem key={agent.id} value={agent.id}>
+                    <DropdownMenuRadioItem
+                      key={agent.id}
+                      value={agent.id}
+                      closeOnClick
+                    >
                       <div className="grid min-w-0 leading-tight">
                         <span className="truncate">{agent.name}</span>
                         <span className="truncate text-xs text-muted-foreground">
@@ -85,12 +90,21 @@ export const ChatHeader = memo(
         </div>
 
         <div className="flex items-center gap-2">
-          {showNewChat && (
-            <Button variant="outline" size="sm" onClick={onNewChat}>
-              <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
-              New chat
-            </Button>
-          )}
+          <AnimatePresence mode="wait">
+            {showNewChat && (
+              <motion.div
+                key="new-chat-btn"
+                initial={{ opacity: 0, scale: 0.6, filter: "blur(5px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, scale: 0.6, filter: "blur(5px)" }}
+              >
+                <Button variant="outline" size="sm" onClick={onNewChat}>
+                  <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
+                  New chat
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {view === "chat" ? (
             <Button
@@ -114,7 +128,7 @@ export const ChatHeader = memo(
         </div>
       </header>
     );
-  }
+  },
 );
 
 ChatHeader.displayName = "ChatHeader";

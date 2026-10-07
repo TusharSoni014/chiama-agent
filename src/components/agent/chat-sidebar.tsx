@@ -55,7 +55,10 @@ export const ChatSidebar = memo(
     };
 
     return (
-      <Sidebar collapsible="offcanvas">
+      <Sidebar
+        className="rounded-tr-xl overflow-hidden rounded-br-xl"
+        collapsible="offcanvas"
+      >
         <SidebarHeader className="gap-3 p-3">
           <Link href="/">
             <div className="flex items-center gap-2.5 px-1">

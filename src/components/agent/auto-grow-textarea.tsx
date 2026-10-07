@@ -12,6 +12,8 @@ const DEFAULT_MAX_HEIGHT = 192;
 type AutoGrowTextareaProps = ComponentProps<typeof InputGroupTextarea> & {
   /** Height in px after which the textarea scrolls instead of growing. */
   maxHeight?: number;
+  /** Called when the content starts or stops spanning more than one line. */
+  onMultilineChange?: (isMultiline: boolean) => void;
 };
 
 /**
@@ -22,6 +24,7 @@ type AutoGrowTextareaProps = ComponentProps<typeof InputGroupTextarea> & {
 export function AutoGrowTextarea({
   value,
   maxHeight = DEFAULT_MAX_HEIGHT,
+  onMultilineChange,
   className,
   ...props
 }: AutoGrowTextareaProps) {
@@ -42,6 +45,7 @@ export function AutoGrowTextarea({
       Math.min(element.scrollHeight, maxHeight)
     );
     element.style.height = `${next}px`;
+    onMultilineChange?.(next > SINGLE_LINE_HEIGHT);
 
     if (!hasMeasured.current || reduceMotion) {
       height.set(next);
@@ -50,7 +54,7 @@ export function AutoGrowTextarea({
     }
 
     animate(height, next, { duration: 0.2, ease: [0.23, 1, 0.32, 1] });
-  }, [height, maxHeight, reduceMotion]);
+  }, [height, maxHeight, reduceMotion, onMultilineChange]);
 
   // Re-measure whenever the text changes (typing, pasting, clearing after send).
   useLayoutEffect(() => {
