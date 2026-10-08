@@ -76,7 +76,7 @@ export const ChatSidebar = memo(
               </span>
             </div>
           </Link>
-          <Button className="w-full justify-start"
+          <Button className="w-full justify-center"
             onClick={() => {
               onNewChat();
               closeOnMobile();
