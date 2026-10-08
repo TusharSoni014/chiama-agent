@@ -16,6 +16,7 @@ import { OpenaiLogo } from "@/components/logos/openai-logo";
 import { ShadcnLogo } from "@/components/logos/shadcn-logo";
 import { TailwindLogo } from "@/components/logos/tailwind-logo";
 import { ZustandLogo } from "@/components/logos/zustand-logo";
+import { GithubLogo } from "@/components/logos/github-logo";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -110,13 +111,25 @@ export default function Home() {
             Build, run and orchestrate multiple AI agents for real work.
           </motion.p>
 
-          <motion.div {...enter(0.34, reduce)} className="pt-1">
+          <motion.div
+            {...enter(0.34, reduce)}
+            className="flex flex-wrap items-center gap-3 pt-1 sm:gap-4"
+          >
             <Link
               href="/agent"
-              className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_35px_rgba(255,255,255,0.35)] transition-all duration-200 hover:bg-zinc-100 hover:shadow-[0_0_50px_rgba(255,255,255,0.55)] active:scale-95 sm:text-base"
+              className="inline-flex items-center justify-center rounded-full border border-transparent bg-white px-8 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_35px_rgba(255,255,255,0.35)] transition-all duration-200 hover:bg-zinc-100 hover:shadow-[0_0_50px_rgba(255,255,255,0.55)] active:scale-95 sm:text-base"
             >
               Use Agent
             </Link>
+            <a
+              href="https://github.com/TusharSoni014/chiama-agent"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-zinc-200 backdrop-blur-md transition-all duration-200 hover:border-white/30 hover:bg-white/10 hover:text-white active:scale-95 sm:text-base"
+            >
+              <GithubLogo className="size-4.5 fill-current" />
+              GitHub Code
+            </a>
           </motion.div>
         </div>
       </main>
