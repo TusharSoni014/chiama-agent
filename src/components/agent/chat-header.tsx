@@ -103,7 +103,6 @@ export const ChatHeader = memo(
                 exit={{ opacity: 0, scale: 0.6, filter: "blur(5px)" }}
               >
                 <Button
-                  variant="outline"
                   size="sm"
                   aria-label="New chat"
                   onClick={onNewChat}
@@ -118,11 +117,10 @@ export const ChatHeader = memo(
 
           {view === "chat" ? (
             <Button
-              variant="outline"
               size="sm"
               aria-label="Call agent"
               onClick={() => onViewChange("call")}
-              className="max-md:size-8 max-md:px-0"
+              className="bg-green-600 text-white hover:bg-green-700 max-md:size-8 max-md:px-0"
             >
               <HugeiconsIcon icon={Call02Icon} />
               <span className="max-md:hidden">Call agent</span>
