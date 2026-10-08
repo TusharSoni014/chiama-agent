@@ -40,7 +40,7 @@ export function ChatSidebarUser() {
     <>
       {!signedIn ? (
         <div className="flex gap-2">
-          <GoogleSignInButton variant="outline" className="min-w-0 flex-1" />
+          <GoogleSignInButton className="min-w-0 flex-1" />
           <Button
             variant="outline"
             size="icon"

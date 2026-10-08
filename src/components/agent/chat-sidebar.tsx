@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -50,10 +51,13 @@ export const ChatSidebar = memo(
     onRequestDelete,
   }: ChatSidebarProps) => {
     const { isMobile, setOpenMobile } = useSidebar();
+    const { status: sessionStatus } = useSession();
 
     const closeOnMobile = () => {
       if (isMobile) setOpenMobile(false);
     };
+
+    const showEmptyHistory = !isLoading && !error && threads.length === 0;
 
     return (
       <Sidebar
@@ -103,7 +107,18 @@ export const ChatSidebar = memo(
                   </li>
                 )}
 
-                {!isLoading && !error && threads.length === 0 && (
+                {showEmptyHistory && sessionStatus === "unauthenticated" && (
+                  <li className="px-1 py-1">
+                    <div className="rounded-xl bg-sidebar-accent p-3 ring-1 ring-sidebar-border">
+                      <p className="text-xs leading-relaxed text-sidebar-foreground">
+                        Log in from the button below to save your chats to
+                        your account.
+                      </p>
+                    </div>
+                  </li>
+                )}
+
+                {showEmptyHistory && sessionStatus === "authenticated" && (
                   <li className="px-3 py-2 text-xs text-muted-foreground">
                     No conversations yet.
                   </li>
