@@ -166,7 +166,10 @@ export function CallScreen({
           <Button
             size="lg"
             className="bg-green-600 text-white hover:bg-green-700"
-            onClick={start}
+            onClick={() => {
+              void new Audio("/call-connect.mp3").play();
+              start();
+            }}
           >
             <HugeiconsIcon icon={Call02Icon} data-icon="inline-start" />
             {status === "disconnected" ? "Call again" : "Start call"}
