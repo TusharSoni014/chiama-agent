@@ -33,7 +33,7 @@ interface ChatSidebarProps {
   threads: ChatThread[];
   isLoading: boolean;
   error: string | null;
-  activeThreadId: string;
+  activeThreadId?: string;
   onSelectThread: (threadId: string) => void;
   onNewChat: () => void;
   onRequestDelete: (thread: ChatThread) => void;

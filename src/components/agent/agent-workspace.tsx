@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSession } from "next-auth/react";
@@ -12,9 +12,22 @@ import { ChatDeleteDialog } from "./chat-delete-dialog";
 import { HelpDialog } from "./help-dialog";
 import { UserSettingsDialog } from "./user-settings-dialog";
 import { ChatHeader } from "./chat-header";
+import { ChatLoader } from "./chat-loader";
 import { ChatSidebar } from "./chat-sidebar";
 import { CallScreen } from "./call/call-screen";
 import type { AgentView, ChatThread } from "./types";
+
+type ChatPanel =
+  | { type: "draft"; id: string; urlLive: boolean }
+  | { type: "saved"; id: string };
+
+function createDraft(): ChatPanel {
+  return { type: "draft", id: crypto.randomUUID(), urlLive: false };
+}
+
+function readChatId(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : undefined;
+}
 
 export function AgentWorkspace({ children }: { children: ReactNode }) {
   const threads = useChatThreads();
@@ -22,8 +35,30 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
   const router = useRouter();
   const reloadChat = useAgentStore((state) => state.reloadChat);
 
-  // The open chat is whatever id is in the URL: /agent/<chatId>.
-  const { chatId } = useParams<{ chatId: string }>();
+  // `/agent` is an empty draft. `/agent/<id>` is a saved chat, or a draft whose
+  // first message just created that id. The chat stays mounted here so that
+  // URL change does not reset the reply that is already streaming.
+  const chatId = readChatId(useParams().chatId);
+  const [panel, setPanel] = useState<ChatPanel>(() =>
+    chatId ? { type: "saved", id: chatId } : createDraft(),
+  );
+  const seenUrl = useRef(chatId ?? null);
+  const urlId = chatId ?? null;
+
+  if (seenUrl.current !== urlId) {
+    seenUrl.current = urlId;
+    if (urlId == null) {
+      if (panel.type !== "draft") setPanel(createDraft());
+    } else if (panel.type === "draft" && panel.id === urlId) {
+      if (!panel.urlLive) setPanel({ ...panel, urlLive: true });
+    } else if (!(panel.type === "saved" && panel.id === urlId)) {
+      setPanel({ type: "saved", id: urlId });
+    }
+  }
+
+  const openChatId =
+    panel.type === "saved" || panel.urlLive ? panel.id : undefined;
+
   const { status: sessionStatus } = useSession();
   const isSignedIn = sessionStatus === "authenticated";
   const [view, setView] = useState<AgentView>("chat");
@@ -36,24 +71,44 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
     ? { duration: 0 }
     : { duration: 0.28, ease: [0.23, 1, 0.32, 1] as const };
 
+  const publishDraft = useCallback(
+    (id: string) => {
+      setPanel((current) =>
+        current.type === "draft" && current.id === id
+          ? { ...current, urlLive: true }
+          : current,
+      );
+      if (chatId !== id) router.replace(`/agent/${id}`, { scroll: false });
+    },
+    [chatId, router],
+  );
+
   // A saved call adds messages to the chat, so reload it from the server.
+  // A call on a new chat is what creates that chat's URL.
   const handleCallSaved = useCallback(() => {
+    if (panel.type === "draft") publishDraft(panel.id);
     reloadChat();
     void refresh();
-  }, [reloadChat, refresh]);
+  }, [panel, publishDraft, reloadChat, refresh]);
 
-  // `/agent` redirects to a fresh chat id.
+  // A new chat keeps the plain `/agent` URL until it has something to save.
   const handleNewChat = useCallback(() => {
     setView("chat");
-    router.push("/agent");
+    setPanel(createDraft());
+    router.push("/agent", { scroll: false });
   }, [router]);
 
   const handleSelectThread = useCallback(
     (threadId: string) => {
       setView("chat");
-      router.push(`/agent/${threadId}`);
+      if (panel.type === "draft" && panel.id === threadId) {
+        publishDraft(threadId);
+        return;
+      }
+      setPanel({ type: "saved", id: threadId });
+      router.push(`/agent/${threadId}`, { scroll: false });
     },
-    [router]
+    [panel, publishDraft, router],
   );
 
   const handleRequestDelete = useCallback((thread: ChatThread) => {
@@ -68,7 +123,7 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
     setDeleteError(null);
     try {
       await removeThread(threadToDelete.id);
-      if (threadToDelete.id === chatId) {
+      if (openChatId && threadToDelete.id === openChatId) {
         handleNewChat();
       }
       setThreadToDelete(null);
@@ -79,7 +134,7 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
     } finally {
       setIsDeleting(false);
     }
-  }, [threadToDelete, removeThread, chatId, handleNewChat]);
+  }, [threadToDelete, removeThread, openChatId, handleNewChat]);
 
   return (
     <ChatThreadsContext.Provider value={threads}>
@@ -88,7 +143,7 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
           threads={threads.threads}
           isLoading={isLoading}
           error={error}
-          activeThreadId={chatId}
+          activeThreadId={openChatId}
           onSelectThread={handleSelectThread}
           onNewChat={handleNewChat}
           onRequestDelete={handleRequestDelete}
@@ -111,6 +166,16 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
               aria-hidden={view !== "chat"}
             >
               {children}
+              <ChatLoader
+                key={panel.id}
+                chatId={panel.id}
+                fresh={panel.type === "draft"}
+                onFirstMessage={
+                  panel.type === "draft"
+                    ? () => publishDraft(panel.id)
+                    : undefined
+                }
+              />
             </motion.div>
             <AnimatePresence>
               {view === "call" && (
@@ -123,7 +188,7 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
                   transition={fade}
                 >
                   <CallScreen
-                    threadId={chatId}
+                    threadId={panel.id}
                     persist={isSignedIn}
                     onTranscriptSaved={handleCallSaved}
                   />

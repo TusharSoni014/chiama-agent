@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useSession } from "next-auth/react";
@@ -22,6 +22,8 @@ import { ChatAgentId } from "@/lib/chat-agents";
 interface ChatConversationProps {
   threadId: string;
   initialMessages: UIMessage[];
+  /** Called once, when the first message of a new chat is sent. */
+  onFirstMessage?: () => void;
 }
 
 const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
@@ -32,6 +34,7 @@ const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
 export function ChatConversation({
   threadId,
   initialMessages,
+  onFirstMessage,
 }: ChatConversationProps) {
   const { addThread, refresh } = useChatThreadsContext();
   const { status: sessionStatus } = useSession();
@@ -40,6 +43,7 @@ export function ChatConversation({
   const agentId = useAgentStore((state) => state.selectedAgentId);
   const [input, setInput] = useState("");
   const { selectedAgentId } = useAgentStore();
+  const announcedRef = useRef(initialMessages.length > 0);
 
   const transport = useMemo(
     () =>
@@ -73,6 +77,10 @@ export function ChatConversation({
       if (!trimmed || isBusy) return;
 
       clearError();
+      if (!announcedRef.current) {
+        announcedRef.current = true;
+        onFirstMessage?.();
+      }
       void sendMessage({ text: trimmed }, { body: { agentId } });
 
       // Show the chat in the sidebar right away. Signed-out chats are not saved.
@@ -86,7 +94,16 @@ export function ChatConversation({
         });
       }
     },
-    [isBusy, clearError, sendMessage, agentId, isSignedIn, addThread, threadId],
+    [
+      isBusy,
+      clearError,
+      onFirstMessage,
+      sendMessage,
+      agentId,
+      isSignedIn,
+      addThread,
+      threadId,
+    ],
   );
 
   const handleSubmit = useCallback(() => {

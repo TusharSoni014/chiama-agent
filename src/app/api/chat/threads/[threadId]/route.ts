@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { openChat } from "@/lib/chat-server";
 
-/** Saved messages of one chat. 404 when it belongs to someone else. */
+/** Saved messages of one chat. 404 when this user has no such chat. */
 export const GET = async (
   _req: Request,
   { params }: { params: Promise<{ threadId: string }> },

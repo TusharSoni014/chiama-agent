@@ -41,17 +41,18 @@ export async function getChatMemory() {
 }
 
 /**
- * Looks up a chat by the id in the URL. `thread` is null for a brand-new chat.
- * `allowed` is false when the chat belongs to someone else (or to a signed-in
- * user while the visitor is signed out), so the page should say "not found".
+ * Looks up a chat by the id in the URL.
+ * `allowed` is false when this user has no such chat, so the page should say "not found".
  */
 export async function openChat(threadId: string) {
   const resourceId = await getChatResourceId();
   const memory = await getChatMemory();
-  const thread = await memory?.getThreadById({ threadId });
+  if (!memory) throw new Error("Chat memory is unavailable.");
 
-  if (!memory || !thread) return { allowed: true, messages: [] as UIMessage[] };
-  if (thread.resourceId !== resourceId) return { allowed: false, messages: [] };
+  const thread = await memory.getThreadById({ threadId });
+  if (!thread || thread.resourceId !== resourceId) {
+    return { allowed: false, messages: [] as UIMessage[] };
+  }
 
   const saved = await memory.recall({ threadId, resourceId: thread.resourceId });
   return {

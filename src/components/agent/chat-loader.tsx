@@ -16,12 +16,26 @@ type LoadState =
   | { status: "error" };
 
 /** Loads the saved messages of `/agent/<chatId>` in the browser, then shows the chat. */
-export function ChatLoader({ chatId }: { chatId: string }) {
+export function ChatLoader({
+  chatId,
+  fresh = false,
+  onFirstMessage,
+}: {
+  chatId: string;
+  /** New chat on `/agent`: show the composer immediately, with no thread fetch. */
+  fresh?: boolean;
+  /** Called once, when the first message of a new chat is sent. */
+  onFirstMessage?: () => void;
+}) {
   // Bumped when a voice call is saved, so the chat reloads with its new messages.
   const reloadToken = useAgentStore((state) => state.chatReloadToken);
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [loadedKey, setLoadedKey] = useState("");
   const key = `${chatId}:${reloadToken}`;
+  // A new chat has nothing to load. Skip that first fetch, including under Strict Mode.
+  const [skippedKey] = useState(() => (fresh ? key : ""));
+  const [state, setState] = useState<LoadState>(
+    fresh ? { status: "ready", messages: [] } : { status: "loading" },
+  );
+  const [loadedKey, setLoadedKey] = useState(() => (fresh ? key : ""));
 
   // Reset during render when the chat changes, so the skeleton shows right away.
   if (loadedKey !== key) {
@@ -30,6 +44,8 @@ export function ChatLoader({ chatId }: { chatId: string }) {
   }
 
   useEffect(() => {
+    if (skippedKey === key) return;
+
     const controller = new AbortController();
 
     fetch(`/api/chat/threads/${encodeURIComponent(chatId)}`, {
@@ -46,7 +62,7 @@ export function ChatLoader({ chatId }: { chatId: string }) {
       });
 
     return () => controller.abort();
-  }, [chatId, reloadToken]);
+  }, [chatId, key, reloadToken, skippedKey]);
 
   const reduce = useReducedMotion();
   const fade = {
@@ -68,6 +84,7 @@ export function ChatLoader({ chatId }: { chatId: string }) {
           <ChatConversation
             threadId={chatId}
             initialMessages={state.messages}
+            onFirstMessage={onFirstMessage}
           />
         </motion.div>
       ) : (

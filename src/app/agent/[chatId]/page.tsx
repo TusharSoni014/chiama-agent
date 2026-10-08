@@ -1,10 +1,4 @@
-import { ChatLoader } from "@/components/agent/chat-loader";
-
-export default async function ChatPage({
-  params,
-}: {
-  params: Promise<{ chatId: string }>;
-}) {
-  const { chatId } = await params;
-  return <ChatLoader chatId={chatId} />;
+/** Existing chats live at `/agent/<chat id>`. The workspace renders the thread. */
+export default function ChatPage() {
+  return null;
 }
