@@ -151,12 +151,23 @@ export function CallScreen({
 
       <div className="flex shrink-0 justify-center border-t px-4 py-4">
         {isActive ? (
-          <Button size="lg" variant="destructive" onClick={end}>
+          <Button
+            size="lg"
+            className="bg-red-600 text-white hover:bg-red-700"
+            onClick={() => {
+              if (status !== "connecting") void new Audio("/call-end.mp3").play();
+              end();
+            }}
+          >
             <HugeiconsIcon icon={CallEnd01Icon} data-icon="inline-start" />
             {status === "connecting" ? "Cancel" : "End call"}
           </Button>
         ) : (
-          <Button size="lg" onClick={start}>
+          <Button
+            size="lg"
+            className="bg-green-600 text-white hover:bg-green-700"
+            onClick={start}
+          >
             <HugeiconsIcon icon={Call02Icon} data-icon="inline-start" />
             {status === "disconnected" ? "Call again" : "Start call"}
           </Button>

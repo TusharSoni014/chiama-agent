@@ -41,6 +41,10 @@ const VOICE_WS_URL = `${
   process.env.NEXT_PUBLIC_VOICE_WS_URL ?? "ws://localhost:3001"
 }/ws/voice`;
 
+function playSound(src: string) {
+  void new Audio(src).play();
+}
+
 /** Give the voice server this long to accept the socket and send `ready`. */
 const CONNECT_TIMEOUT_MS = 10_000;
 
@@ -178,6 +182,7 @@ export function useVoiceCall({
           case "ready":
             live = true;
             if (connectTimer) clearTimeout(connectTimer);
+            if (!closed) playSound("/call-connect.mp3");
             setPhase("connected");
             setTimeout(
               () => setPhase((p) => (p === "connected" ? "listening" : p)),
