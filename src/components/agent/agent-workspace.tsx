@@ -92,11 +92,21 @@ export function AgentWorkspace({ children }: { children: ReactNode }) {
   }, [panel, publishDraft, reloadChat, refresh]);
 
   // A new chat keeps the plain `/agent` URL until it has something to save.
+  // Clicking New chat again while that screen is already open must not
+  // mint another draft, or the empty chat remounts and plays again.
   const handleNewChat = useCallback(() => {
+    const alreadyNew =
+      urlId == null && panel.type === "draft" && !panel.urlLive;
+
+    if (alreadyNew) {
+      if (view !== "chat") setView("chat");
+      return;
+    }
+
     setView("chat");
     setPanel(createDraft());
     router.push("/agent", { scroll: false });
-  }, [router]);
+  }, [panel, router, urlId, view]);
 
   const handleSelectThread = useCallback(
     (threadId: string) => {
