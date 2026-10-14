@@ -19,6 +19,8 @@ import { ZustandLogo } from "@/components/logos/zustand-logo";
 import { GithubLogo } from "@/components/logos/github-logo";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+// S-curve ease-in-out: slow start, fast in mid, slow in end
+const BG_EASE = [0.65, 0, 0.35, 1] as const;
 
 const enter = (delay: number, reduce: boolean | null) =>
   reduce
@@ -55,9 +57,9 @@ export default function Home() {
   }, []);
 
   const imageHidden = reduce
-    ? { opacity: 1, scale: 1, filter: "blur(0px)" }
-    : { opacity: 0, scale: 1.12, filter: "blur(16px)" };
-  const imageShown = { opacity: 1, scale: 1, filter: "blur(0px)" };
+    ? { opacity: 1, filter: "blur(0px)" }
+    : { opacity: 0, filter: "blur(16px)" };
+  const imageShown = { opacity: 1, filter: "blur(0px)" };
 
   return (
     <div className="relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-black text-white selection:bg-purple-500/30">
@@ -73,8 +75,7 @@ export default function Home() {
             onLoad={() => setIsLoaded(true)}
             initial={imageHidden}
             animate={isLoaded || reduce ? imageShown : imageHidden}
-            transition={{ duration: 1.15, ease: EASE }}
-            style={{ transformOrigin: "right center" }}
+            transition={{ duration: 1.2, ease: BG_EASE }}
             className="absolute inset-0 h-full w-full max-w-none object-cover object-[68%_center] sm:object-[78%_center] lg:object-right [@media(min-aspect-ratio:16/9)]:object-contain [@media(min-aspect-ratio:16/9)]:object-right"
           />
         </div>
