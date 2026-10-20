@@ -1,4 +1,4 @@
-import { Agent } from "@mastra/core/agent";
+import { Agent, ToolsInput } from "@mastra/core/agent";
 import type { MastraVoice } from "@mastra/core/voice";
 import { OpenAIRealtimeVoice } from "@mastra/voice-openai-realtime";
 import { mastra } from "../src/mastra";
@@ -21,7 +21,7 @@ const VOICE_PROFILES: Record<
   {
     name: string;
     instructions: string;
-    tools: NonNullable<ConstructorParameters<typeof Agent>[0]["tools"]>;
+    tools: ToolsInput;
     greeting: string;
   }
 > = {

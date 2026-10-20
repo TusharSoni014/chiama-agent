@@ -52,6 +52,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
       const instance = await createVoiceAgent(agentId, userKey).getVoice();
       voice = instance;
 
+      // Step 2: Mastra Emits this event after openai cooks up the response and sends it to the browser
       instance.on("speaker", (stream: NodeJS.ReadableStream) => {
         stream.on("data", (chunk: Buffer) =>
           send({ type: "audio", data: chunk.toString("base64") }),
@@ -184,6 +185,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
 
         if (!voice || message.type !== "audio") return;
 
+        // Step 1: frontend sends audio data to the server as base64 encoded string, we decodes it to a buffer and then agent sends it to OpenAI
         const bytes = Buffer.from(message.data, "base64");
         // Copy so the Int16Array is always 2-byte aligned.
         const pcm = new Int16Array(

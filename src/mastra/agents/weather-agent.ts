@@ -30,7 +30,6 @@ export const weatherAgent = new Agent({
   id: "weather-agent",
   name: "Weather Agent",
   instructions: weatherAgentInstructions,
-  // LLM Brain: OpenRouter free router, or the visitor's own OpenAI key when sent.
   model: resolveTextModel,
   tools: weatherAgentTools,
   memory: new Memory(),
