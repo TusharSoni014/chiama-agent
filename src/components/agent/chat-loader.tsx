@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState, type ComponentProps } from "react";
+import { useState, type ComponentProps } from "react";
 import Link from "next/link";
 import type { UIMessage } from "ai";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAgentStore } from "@/stores/agent-store";
+import {
+  ThreadHistoryError,
+  useThreadHistory,
+} from "@/hooks/use-thread-history";
 import { ChatConversation } from "./chat-conversation";
 
 type LoadState =
@@ -14,6 +18,22 @@ type LoadState =
   | { status: "ready"; messages: UIMessage[] }
   | { status: "not-found" }
   | { status: "error" };
+
+const NO_MESSAGES: UIMessage[] = [];
+
+function toLoadState(
+  skipped: boolean,
+  history: ReturnType<typeof useThreadHistory>,
+): LoadState {
+  if (skipped) return { status: "ready", messages: NO_MESSAGES };
+  if (history.isPending) return { status: "loading" };
+  if (history.isError) {
+    const missing =
+      history.error instanceof ThreadHistoryError && history.error.status === 404;
+    return { status: missing ? "not-found" : "error" };
+  }
+  return { status: "ready", messages: history.data };
+}
 
 /** Loads the saved messages of `/agent/<chatId>` in the browser, then shows the chat. */
 export function ChatLoader({
@@ -32,37 +52,10 @@ export function ChatLoader({
   const key = `${chatId}:${reloadToken}`;
   // A new chat has nothing to load. Skip that first fetch, including under Strict Mode.
   const [skippedKey] = useState(() => (fresh ? key : ""));
-  const [state, setState] = useState<LoadState>(
-    fresh ? { status: "ready", messages: [] } : { status: "loading" },
-  );
-  const [loadedKey, setLoadedKey] = useState(() => (fresh ? key : ""));
+  const skipped = skippedKey === key;
 
-  // Reset during render when the chat changes, so the skeleton shows right away.
-  if (loadedKey !== key) {
-    setLoadedKey(key);
-    setState({ status: "loading" });
-  }
-
-  useEffect(() => {
-    if (skippedKey === key) return;
-
-    const controller = new AbortController();
-
-    fetch(`/api/chat/threads/${encodeURIComponent(chatId)}`, {
-      signal: controller.signal,
-    })
-      .then(async (res) => {
-        if (res.status === 404) return setState({ status: "not-found" });
-        if (!res.ok) return setState({ status: "error" });
-        const data = (await res.json()) as { messages: UIMessage[] };
-        setState({ status: "ready", messages: data.messages });
-      })
-      .catch((error) => {
-        if (error?.name !== "AbortError") setState({ status: "error" });
-      });
-
-    return () => controller.abort();
-  }, [chatId, key, reloadToken, skippedKey]);
+  const history = useThreadHistory({ chatId, reloadToken, enabled: !skipped });
+  const state = toLoadState(skipped, history);
 
   const reduce = useReducedMotion();
   const fade = {

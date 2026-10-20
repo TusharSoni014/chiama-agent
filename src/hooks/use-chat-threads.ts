@@ -1,10 +1,17 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext } from "react";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { ChatThread } from "@/components/agent/types";
 
 const THREADS_ENDPOINT = "/api/chat/threads";
+const THREADS_KEY = ["threads"] as const;
 const LOAD_ERROR = "Could not load your conversations.";
+const NO_THREADS: ChatThread[] = [];
 
 async function readError(res: Response, fallback: string) {
   try {
@@ -22,61 +29,55 @@ async function fetchThreads(): Promise<ChatThread[]> {
   return res.json();
 }
 
-export function useChatThreads() {
-  const [threads, setThreads] = useState<ChatThread[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+async function deleteThread(threadId: string) {
+  const res = await fetch(
+    `${THREADS_ENDPOINT}?threadId=${encodeURIComponent(threadId)}`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) {
+    throw new Error(await readError(res, "Could not delete the conversation."));
+  }
+}
 
-  const applyResult = useCallback(
-    (result: ChatThread[] | Error) => {
-      if (result instanceof Error) {
-        setError(result.message);
-      } else {
-        setThreads(result);
-        setError(null);
-      }
-      setIsLoading(false);
-    },
-    []
+export function useChatThreads() {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({ queryKey: THREADS_KEY, queryFn: fetchThreads });
+
+  /** Loads the list again. A failure shows as `error`; the old list stays. */
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: THREADS_KEY }),
+    [queryClient]
   );
 
-  const refresh = useCallback(async () => {
-    applyResult(await fetchThreads().catch((err: Error) => err));
-  }, [applyResult]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchThreads()
-      .catch((err: Error) => err)
-      .then((result) => {
-        if (!cancelled) applyResult(result);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [applyResult]);
-
   /** Shows a conversation in the sidebar right away, before the server list refreshes. */
-  const addThread = useCallback((thread: ChatThread) => {
-    setThreads((prev) =>
-      prev.some((item) => item.id === thread.id) ? prev : [thread, ...prev]
-    );
-  }, []);
+  const addThread = useCallback(
+    (thread: ChatThread) => {
+      queryClient.setQueryData<ChatThread[]>(THREADS_KEY, (prev = NO_THREADS) =>
+        prev.some((item) => item.id === thread.id) ? prev : [thread, ...prev]
+      );
+    },
+    [queryClient]
+  );
 
-  const removeThread = useCallback(async (threadId: string) => {
-    const res = await fetch(
-      `${THREADS_ENDPOINT}?threadId=${encodeURIComponent(threadId)}`,
-      { method: "DELETE" }
-    );
-    if (!res.ok) {
-      throw new Error(await readError(res, "Could not delete the conversation."));
-    }
-    setThreads((prev) => prev.filter((thread) => thread.id !== threadId));
-  }, []);
+  const { mutateAsync: removeThread } = useMutation({
+    mutationFn: deleteThread,
+    onSuccess: (_data, threadId) => {
+      queryClient.setQueryData<ChatThread[]>(THREADS_KEY, (prev = NO_THREADS) =>
+        prev.filter((thread) => thread.id !== threadId)
+      );
+    },
+  });
 
-  return { threads, isLoading, error, refresh, addThread, removeThread };
+  return {
+    threads: query.data ?? NO_THREADS,
+    // True until the first load finishes, whether it worked or failed.
+    isLoading: query.isPending,
+    error: query.error?.message ?? null,
+    refresh,
+    addThread,
+    removeThread,
+  };
 }
 
 /** The workspace owns the thread list; the chat page reads it from here. */

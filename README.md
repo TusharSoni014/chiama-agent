@@ -28,7 +28,7 @@ Chiama is a Next.js app for chatting with Mastra agents and calling them over re
 | Chat stream | `@mastra/ai-sdk`, Vercel AI SDK (`ai`, `@ai-sdk/react`)                         |
 | Voice       | Hono + `@hono/node-ws`, `@mastra/voice-openai-realtime`                         |
 | Auth        | NextAuth v5, Google provider                                                    |
-| State       | Zustand (`src/stores/agent-store.ts`)                                           |
+| State       | Zustand (`src/stores/agent-store.ts`), React Query for server data              |
 | Orbs        | `thinking-orbs`                                                                 |
 | DB          | Postgres via `@mastra/pg` (`DATABASE_URL`)                                      |
 
@@ -188,10 +188,10 @@ Text model: `resolveTextModel` in `src/mastra/modelConfig.ts`.
 | `src/lib/auth.ts`                 | NextAuth Google                                            |
 | `src/lib/brand.ts`                | Chiama logo URL (Cloudflare R2, not a local `chiama.png`)  |
 | `src/hooks/use-voice-call.ts`     | Call session, 10s connect timeout                          |
-| `src/hooks/use-chat-threads.ts`   | Thread list                                                |
+| `src/hooks/use-chat-threads.ts`   | Thread list + delete (React Query)                         |
 | `src/hooks/use-chat-panel.ts`     | Which chat is open (draft or saved), kept in step with URL |
 | `src/hooks/use-delete-thread.ts`  | Delete-conversation dialog state                           |
-| `src/hooks/use-thread-history.ts` | Load messages                                              |
+| `src/hooks/use-thread-history.ts` | Load one chat's messages (React Query)                     |
 | `src/hooks/use-mobile.ts`         | `<768px`                                                   |
 | `src/stores/agent-store.ts`       | Selected agent, help/settings open                         |
 | `src/mastra/`                     | Agents, tools, workflow, Mastra instance                   |
