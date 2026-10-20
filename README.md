@@ -150,11 +150,12 @@ Text model: `resolveTextModel` in `src/mastra/modelConfig.ts`.
 
 | File                                          | Role                                                                  |
 | --------------------------------------------- | --------------------------------------------------------------------- |
-| `agent-workspace.tsx`                         | Shell: sidebar, chat/call switch (crossfade), dialogs, auto-open help |
+| `agent-workspace.tsx`                         | Shell (route layout): sidebar, header, dialogs, auto-open help        |
+| `agent-stage.tsx`                             | Main area: chat with the call screen crossfading over it              |
 | `chat-sidebar.tsx`                            | Brand, new chat, thread list, user footer                             |
 | `chat-sidebar-user.tsx`                       | Google sign-in + help, or account menu (Help / Settings / Log out)    |
 | `chat-header.tsx`                             | Agent picker, new chat, call / back (icon-only on mobile)             |
-| `chat-session.tsx`                            | Loads history then mounts conversation                                |
+| `chat-loader.tsx`                             | Loads history then mounts conversation                                |
 | `chat-conversation.tsx`                       | `useChat`, transport, errors                                          |
 | `chat-messages.tsx` / `chat-message-item.tsx` | List, bubbles, orbs → logo, streaming height                          |
 | `chat-input.tsx` / `auto-grow-textarea.tsx`   | Composer                                                              |
@@ -188,6 +189,8 @@ Text model: `resolveTextModel` in `src/mastra/modelConfig.ts`.
 | `src/lib/brand.ts`                | Chiama logo URL (Cloudflare R2, not a local `chiama.png`)  |
 | `src/hooks/use-voice-call.ts`     | Call session, 10s connect timeout                          |
 | `src/hooks/use-chat-threads.ts`   | Thread list                                                |
+| `src/hooks/use-chat-panel.ts`     | Which chat is open (draft or saved), kept in step with URL |
+| `src/hooks/use-delete-thread.ts`  | Delete-conversation dialog state                           |
 | `src/hooks/use-thread-history.ts` | Load messages                                              |
 | `src/hooks/use-mobile.ts`         | `<768px`                                                   |
 | `src/stores/agent-store.ts`       | Selected agent, help/settings open                         |

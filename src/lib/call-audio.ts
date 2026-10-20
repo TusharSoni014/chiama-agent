@@ -1,6 +1,6 @@
 import { VOICE_SAMPLE_RATE } from "@/lib/voice-protocol";
 
-/** Streams the microphone as ~100 ms chunks of 24 kHz PCM16 (see public/worklets). */
+/** Streams the microphone as ~100 ms chunks of 24 kHz PCM16, 16bit mono (see public/worklets). */
 export async function startMic(onChunk: (pcm: ArrayBuffer) => void) {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },

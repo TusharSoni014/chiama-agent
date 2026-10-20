@@ -76,7 +76,11 @@ export function CallScreen({
         />
         <h2 className="text-base font-semibold tracking-tight">Chiama Agent</h2>
         <Badge
-          variant={status === "listening" || status === "speaking" ? "default" : "secondary"}
+          variant={
+            status === "listening" || status === "speaking"
+              ? "default"
+              : "secondary"
+          }
           role="status"
         >
           {status === "connecting" && <Spinner data-icon="inline-start" />}
@@ -155,7 +159,8 @@ export function CallScreen({
             size="lg"
             className="bg-red-600 text-white hover:bg-red-700"
             onClick={() => {
-              if (status !== "connecting") void new Audio("/call-end.mp3").play();
+              if (status !== "connecting")
+                void new Audio("/call-end.mp3").play();
               end();
             }}
           >
@@ -167,7 +172,8 @@ export function CallScreen({
             size="lg"
             className="bg-green-600 text-white hover:bg-green-700"
             onClick={() => {
-              void new Audio("/call-connect.mp3").play();
+              const audio = new Audio("/call-connect.mp3");
+              audio.play();
               start();
             }}
           >
