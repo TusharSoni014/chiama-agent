@@ -22,8 +22,7 @@ export async function POST(req: Request) {
     // Anonymous visitors: answer from the messages sent by the browser, with no
     // memory attached, so nothing is written to the backend.
     if (!resourceId) {
-      const { agentId, memory: _memory, threadId: _threadId, ...guestParams } =
-        params;
+      const { agentId, ...guestParams } = params;
       const guestStream = await handleChatStream({
         mastra,
         agentId: resolveChatAgentId(agentId),

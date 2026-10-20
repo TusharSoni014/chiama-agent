@@ -8,14 +8,12 @@ import {
   MastraPlatformExporter,
   SensitiveDataFilter,
 } from "@mastra/observability";
-import { weatherWorkflow } from "./workflows/weather-workflow";
 import { weatherAgent } from "./agents/weather-agent";
 import { tusharSoniAgent } from "./agents/tusharsoni-agent";
 import { weatherTool } from "./tools/weather-tool";
 import { tusharsoniTool } from "./tools/tusharsoni-tool";
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow },
   agents: { weatherAgent, tusharSoniAgent },
   tools: { weatherTool, tusharsoniTool },
   storage: new PostgresStore({
