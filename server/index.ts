@@ -25,9 +25,20 @@ app.use("/ws/*", async (c, next) => {
   await next();
 });
 
+// An agent this server does not know (for example the web app was deployed
+// with a new agent but this server was not) must fail loudly. Falling back to
+// the default would silently answer as a different agent.
+app.use("/ws/voice", async (c, next) => {
+  const requested = c.req.query("agentId");
+  if (requested !== undefined && !isChatAgentId(requested)) {
+    return c.text(`Unknown agent "${requested}". Redeploy the voice server.`, 400);
+  }
+  await next();
+});
+
 app.get(
   "/ws/voice",
-  // The browser says which agent it wants as `?agentId=...`; unknown ids fall back to the default.
+  // The browser says which agent it wants as `?agentId=...`; no id means the default.
   upgradeWebSocket((c) => {
     const requested = c.req.query("agentId");
     return createVoiceHandler(
