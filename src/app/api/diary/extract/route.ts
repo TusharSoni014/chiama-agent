@@ -39,7 +39,9 @@ export async function POST(req: Request) {
     const response = await mastra
       .getAgentById("diary-extractor-agent")
       .generate(`Transcript:\n${lines.join("\n")}`, {
-        structuredOutput: { schema: diaryEntrySchema },
+        // The default free model ignores `response_format` and returns no object,
+        // so the schema goes into the prompt instead. This works for every model.
+        structuredOutput: { schema: diaryEntrySchema, jsonPromptInjection: true },
         ...getUserKeyContext(req),
       });
 

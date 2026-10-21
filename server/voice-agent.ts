@@ -14,6 +14,14 @@ import { END_CALL_TOOL_NAME, endCallTool } from "../src/mastra/tools/end-call-to
 import { tusharSoniTool } from "../src/mastra/tools/tusharsoni-tool";
 import { textModel } from "../src/mastra/modelConfig";
 
+/** Added to every agent's call instructions: the caller can always hang up by asking. */
+const END_ON_REQUEST = `
+Ending the call when asked:
+- If the caller asks to end the call or hang up (for example "just end the call", "that's all", "bye"), say a very short goodbye out loud, then call the ${END_CALL_TOOL_NAME} tool.
+- Call ${END_CALL_TOOL_NAME} only after the goodbye, and never when the caller has not asked to leave.
+- After you call ${END_CALL_TOOL_NAME}, say nothing more.
+`;
+
 /**
  * What a call needs from each text agent: its personality (instructions), its
  * abilities (tools) and the first sentence it says. Reusing the text agents'
@@ -30,15 +38,15 @@ const VOICE_PROFILES: Record<
 > = {
   "weather-agent": {
     name: "Weather Voice Agent",
-    instructions: () => weatherAgentInstructions,
-    tools: weatherAgentTools,
+    instructions: () => weatherAgentInstructions + END_ON_REQUEST,
+    tools: { ...weatherAgentTools, [END_CALL_TOOL_NAME]: endCallTool },
     greeting: () =>
       "Hi, I'm your weather assistant. Which city would you like the weather for?",
   },
   "tusharsoni-agent": {
     name: "Tushar Soni Voice Agent",
-    instructions: () => tusharSoniAgentInstructions,
-    tools: { tusharSoniTool },
+    instructions: () => tusharSoniAgentInstructions + END_ON_REQUEST,
+    tools: { tusharSoniTool, [END_CALL_TOOL_NAME]: endCallTool },
     greeting: () =>
       "Hey! I can tell you all about Tushar Soni. What do you want to know?",
   },
@@ -50,7 +58,7 @@ Ending the call:
 - You are on a phone call. Once you have the name, the duration and the topics, give your short recap and goodbye out loud, then call the ${END_CALL_TOOL_NAME} tool.
 - Call ${END_CALL_TOOL_NAME} only after the goodbye. Never call it earlier.
 - After you call ${END_CALL_TOOL_NAME}, say nothing more.
-`,
+${END_ON_REQUEST}`,
     tools: { [END_CALL_TOOL_NAME]: endCallTool },
     greeting: (firstName) =>
       `Hello ${firstName ?? "friend"}! Who did you just meet?`,
