@@ -10,6 +10,7 @@ import {
   weatherAgentInstructions,
   weatherAgentTools,
 } from "../src/mastra/agents/weather-agent";
+import { END_CALL_TOOL_NAME, endCallTool } from "../src/mastra/tools/end-call-tool";
 import { tusharSoniTool } from "../src/mastra/tools/tusharsoni-tool";
 import { textModel } from "../src/mastra/modelConfig";
 
@@ -43,8 +44,14 @@ const VOICE_PROFILES: Record<
   },
   "diary-agent": {
     name: "Diary Voice Agent",
-    instructions: buildDiaryAgentInstructions,
-    tools: {},
+    instructions: (firstName) =>
+      `${buildDiaryAgentInstructions(firstName)}
+Ending the call:
+- You are on a phone call. Once you have the name, the duration and the topics, give your short recap and goodbye out loud, then call the ${END_CALL_TOOL_NAME} tool.
+- Call ${END_CALL_TOOL_NAME} only after the goodbye. Never call it earlier.
+- After you call ${END_CALL_TOOL_NAME}, say nothing more.
+`,
+    tools: { [END_CALL_TOOL_NAME]: endCallTool },
     greeting: (firstName) =>
       `Hello ${firstName ?? "friend"}! Who did you just meet?`,
   },

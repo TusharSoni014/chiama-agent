@@ -5,6 +5,7 @@ import type {
 } from "../src/lib/voice-protocol";
 import type { ChatAgentId } from "../src/lib/chat-agents";
 import { parseOpenAIKey } from "../src/lib/openai-key-storage";
+import { END_CALL_TOOL_NAME } from "../src/mastra/tools/end-call-tool";
 import { createVoiceAgent, getVoiceGreeting } from "./voice-agent";
 
 type Voice = Awaited<
@@ -74,9 +75,23 @@ export function createVoiceHandler(agentId: ChatAgentId) {
         agentResponding = true;
         clearCallerAudio();
       });
+      // The agent called its end-call tool after saying goodbye. The response
+      // that carried the call is the last one worth playing: once it is done,
+      // tell the browser to hang up after the goodbye has played.
+      let endRequested = false;
+      let endSent = false;
+      instance.on("tool-call-result", (data) => {
+        if ((data as { toolName?: string }).toolName === END_CALL_TOOL_NAME) {
+          endRequested = true;
+        }
+      });
       instance.on("response.done", () => {
         agentResponding = false;
         clearCallerAudio();
+        if (endRequested && !endSent) {
+          endSent = true;
+          send({ type: "end" });
+        }
       });
 
       // Pieces of both sides' speech. `response_id` is the same for every piece of

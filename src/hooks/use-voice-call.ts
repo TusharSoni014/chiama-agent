@@ -83,10 +83,13 @@ export function useVoiceCall({
     let agentSpeaking = false;
     let heardAgent = false;
     let callerMicOpen = false;
+    // Set when the agent has said goodbye: hang up as soon as its audio is done.
+    let ending = false;
     const player = new PcmPlayer((speaking) => {
       agentSpeaking = speaking;
       if (!speaking && heardAgent) callerMicOpen = true;
       setIsSpeaking(speaking);
+      if (!speaking && ending) endCall();
     });
     let socket: WebSocket | undefined;
     let stopMic: (() => void) | undefined;
@@ -130,6 +133,13 @@ export function useVoiceCall({
       saveTranscript();
     };
     hangUpRef.current = hangUp;
+
+    // Same as pressing "End call", but started by the agent.
+    const endCall = () => {
+      if (closed) return;
+      void new Audio("/call-end.mp3").play().catch(() => {});
+      hangUp();
+    };
 
     // Appends to the line of turn `id`, creating it if this is the first piece.
     const addTranscript = (id: string, role: VoiceRole, text: string) => {
@@ -195,7 +205,17 @@ export function useVoiceCall({
           case "transcript":
             addTranscript(event.id, event.role, event.text);
             break;
+          case "end":
+            // The goodbye is still playing. Hang up once it is done, or right
+            // away (after a beat for the last chunks to start) if it already is.
+            ending = true;
+            setTimeout(() => {
+              if (!agentSpeaking) endCall();
+            }, 400);
+            break;
           case "audio":
+            // Anything after the goodbye is the agent talking past its own ending.
+            if (ending) break;
             heardAgent = true;
             player.enqueue(event.data);
             break;
