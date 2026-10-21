@@ -10,11 +10,13 @@ import {
 } from "@mastra/observability";
 import { weatherAgent } from "./agents/weather-agent";
 import { tusharSoniAgent } from "./agents/tusharsoni-agent";
+import { diaryAgent } from "./agents/diary-agent";
+import { diaryExtractorAgent } from "./agents/diary-extractor-agent";
 import { weatherTool } from "./tools/weather-tool";
 import { tusharsoniTool } from "./tools/tusharsoni-tool";
 
 export const mastra = new Mastra({
-  agents: { weatherAgent, tusharSoniAgent },
+  agents: { weatherAgent, tusharSoniAgent, diaryAgent, diaryExtractorAgent },
   tools: { weatherTool, tusharsoniTool },
   storage: new PostgresStore({
     id: "mastra-storage",

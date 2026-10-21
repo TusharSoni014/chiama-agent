@@ -35,6 +35,11 @@ const AGENT_TITLES: Record<
     description:
       "Get information about Tushar Soni's projects, skills, and professional experience.",
   },
+  "diary-agent": {
+    title: "Log a meetup",
+    description:
+      "Tell me who you met, how long you talked, and what it was about.",
+  },
 };
 
 const AGENT_SUGGESTIONS: Record<ChatAgentId, PromptSuggestion[]> = {
@@ -75,6 +80,12 @@ const AGENT_SUGGESTIONS: Record<ChatAgentId, PromptSuggestion[]> = {
     {
       label: "Tushar's Professional Experience",
       prompt: "What is Tushar Soni's professional experience?",
+    },
+  ],
+  "diary-agent": [
+    {
+      label: "Log a meetup",
+      prompt: "Hey, I just met someone and want to log it.",
     },
   ],
 };

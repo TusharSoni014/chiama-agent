@@ -14,6 +14,11 @@ export const CHAT_AGENTS = [
     name: "Tushar Soni Agent",
     description: "Ask about Tushar Soni",
   },
+  {
+    id: "diary-agent",
+    name: "Diary Agent",
+    description: "Log a meetup with someone",
+  },
 ] as const;
 
 export type ChatAgentId = (typeof CHAT_AGENTS)[number]["id"];

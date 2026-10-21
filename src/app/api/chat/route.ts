@@ -6,6 +6,7 @@ import {
   errorResponse,
   getChatMemory,
   getChatResourceId,
+  getChatUserName,
   getErrorMessage,
   getUserKeyContext,
   resolveChatAgentId,
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
           thread: threadId,
           resource: resourceId,
         },
-        ...getUserKeyContext(req),
+        ...getUserKeyContext(req, await getChatUserName()),
       },
     });
     return createUIMessageStreamResponse({ stream });

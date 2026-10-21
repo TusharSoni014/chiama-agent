@@ -3,6 +3,8 @@ import type { MastraVoice } from "@mastra/core/voice";
 import { OpenAIRealtimeVoice } from "@mastra/voice-openai-realtime";
 import { mastra } from "../src/mastra";
 import type { ChatAgentId } from "../src/lib/chat-agents";
+import { toFirstName } from "../src/lib/first-name";
+import { buildDiaryAgentInstructions } from "../src/mastra/agents/diary-agent";
 import { tusharSoniAgentInstructions } from "../src/mastra/agents/tusharsoni-agent";
 import {
   weatherAgentInstructions,
@@ -20,28 +22,37 @@ const VOICE_PROFILES: Record<
   ChatAgentId,
   {
     name: string;
-    instructions: string;
+    instructions: (firstName?: string) => string;
     tools: ToolsInput;
-    greeting: string;
+    greeting: (firstName?: string) => string;
   }
 > = {
   "weather-agent": {
     name: "Weather Voice Agent",
-    instructions: weatherAgentInstructions,
+    instructions: () => weatherAgentInstructions,
     tools: weatherAgentTools,
-    greeting:
+    greeting: () =>
       "Hi, I'm your weather assistant. Which city would you like the weather for?",
   },
   "tusharsoni-agent": {
     name: "Tushar Soni Voice Agent",
-    instructions: tusharSoniAgentInstructions,
+    instructions: () => tusharSoniAgentInstructions,
     tools: { tusharSoniTool },
-    greeting: "Hey! I can tell you all about Tushar Soni. What do you want to know?",
+    greeting: () =>
+      "Hey! I can tell you all about Tushar Soni. What do you want to know?",
+  },
+  "diary-agent": {
+    name: "Diary Voice Agent",
+    instructions: buildDiaryAgentInstructions,
+    tools: {},
+    greeting: (firstName) =>
+      `Hello ${firstName ?? "friend"}! Who did you just meet?`,
   },
 };
 
-export function getVoiceGreeting(agentId: ChatAgentId) {
-  return VOICE_PROFILES[agentId].greeting;
+/** `firstName` is the signed-in caller's first name; omit it for signed-out callers. */
+export function getVoiceGreeting(agentId: ChatAgentId, firstName?: string) {
+  return VOICE_PROFILES[agentId].greeting(toFirstName(firstName));
 }
 
 /**
@@ -51,7 +62,11 @@ export function getVoiceGreeting(agentId: ChatAgentId) {
  * During a call `gpt-realtime` does the thinking and speaking; `model` below is
  * only used if this agent is asked for a text reply.
  */
-export function createVoiceAgent(agentId: ChatAgentId, apiKey?: string) {
+export function createVoiceAgent(
+  agentId: ChatAgentId,
+  apiKey?: string,
+  firstName?: string,
+) {
   const profile = VOICE_PROFILES[agentId];
 
   const voice = new OpenAIRealtimeVoice({
@@ -64,7 +79,7 @@ export function createVoiceAgent(agentId: ChatAgentId, apiKey?: string) {
   return new Agent({
     id: `${agentId}-voice`,
     name: profile.name,
-    instructions: profile.instructions,
+    instructions: profile.instructions(toFirstName(firstName)),
     model: textModel,
     tools: profile.tools,
     // The package bundles its own copy of `MastraVoice`, so TypeScript sees a

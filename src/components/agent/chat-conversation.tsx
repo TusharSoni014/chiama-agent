@@ -29,6 +29,7 @@ interface ChatConversationProps {
 const AGENT_PLACEHOLDERS: Record<ChatAgentId, string> = {
   "weather-agent": "Ask about the weather in any city",
   "tusharsoni-agent": "Ask anything about Tushar Soni",
+  "diary-agent": "Say hi to log your meetup",
 };
 
 export function ChatConversation({

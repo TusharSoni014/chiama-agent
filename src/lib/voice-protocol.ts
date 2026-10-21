@@ -7,11 +7,12 @@ export type VoiceRole = "user" | "assistant";
 
 /**
  * Browser -> server. `start` is sent first and begins the call; `openaiKey` is the
- * visitor's own key (sent in the message, not the URL, and never stored). `data`
- * in `audio` is base64 PCM16.
+ * visitor's own key (sent in the message, not the URL, and never stored).
+ * `userName` is the signed-in visitor's first name, used only for the greeting;
+ * it is absent for signed-out visitors. `data` in `audio` is base64 PCM16.
  */
 export type VoiceClientMessage =
-  | { type: "start"; openaiKey?: string }
+  | { type: "start"; openaiKey?: string; userName?: string }
   | { type: "audio"; data: string };
 
 /** Server -> browser. */

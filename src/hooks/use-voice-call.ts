@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PcmPlayer, startMic } from "@/lib/call-audio";
+import { useSession } from "next-auth/react";
 import { useAgentStore } from "@/stores/agent-store";
+import { toFirstName } from "@/lib/first-name";
 import {
   getStoredOpenAIKey,
   isOpenAIUsageLimitError,
@@ -60,9 +62,11 @@ export function useVoiceCall({
   const [error, setError] = useState<string | null>(null);
 
   const hangUpRef = useRef<((message?: string) => void) | null>(null);
-  const optionsRef = useRef({ threadId, onSaved, persist });
+  const { data: session } = useSession();
+  const userName = toFirstName(session?.user?.name);
+  const optionsRef = useRef({ threadId, onSaved, persist, userName });
   useEffect(() => {
-    optionsRef.current = { threadId, onSaved, persist };
+    optionsRef.current = { threadId, onSaved, persist, userName };
   });
 
   const start = useCallback(async () => {
@@ -162,7 +166,11 @@ export function useVoiceCall({
       // The server waits for this before it opens the call.
       socket.onopen = () => {
         const openaiKey = getStoredOpenAIKey() ?? undefined;
-        const start: VoiceClientMessage = { type: "start", openaiKey };
+        const start: VoiceClientMessage = {
+          type: "start",
+          openaiKey,
+          userName: optionsRef.current.userName,
+        };
         socket?.send(JSON.stringify(start));
       };
       socket.onclose = () =>

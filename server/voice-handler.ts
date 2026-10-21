@@ -40,7 +40,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
    * Opens the call. `userKey` is the caller's own OpenAI key from the `start`
    * message. It is used for this call only and is never stored or logged.
    */
-  const startCall = async (userKey?: string) => {
+  const startCall = async (userKey?: string, userName?: string) => {
     try {
       if (!userKey && !process.env.OPENAI_API_KEY) {
         throw new Error(
@@ -49,7 +49,11 @@ export function createVoiceHandler(agentId: ChatAgentId) {
       }
 
       // getVoice() hands the agent's instructions and tools to the voice.
-      const instance = await createVoiceAgent(agentId, userKey).getVoice();
+      const instance = await createVoiceAgent(
+        agentId,
+        userKey,
+        userName,
+      ).getVoice();
       voice = instance;
 
       // Step 2: Mastra Emits this event after openai cooks up the response and sends it to the browser
@@ -143,7 +147,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
       // following text", which makes it keep going and role-play the caller.
       asRealtime(instance).sendEvent("response.create", {
         response: {
-          instructions: `Say exactly the greeting below, then stop and wait for the caller. Do not invent, repeat, or role-play anything the caller says.\n\n${getVoiceGreeting(agentId)}`,
+          instructions: `Say exactly the greeting below, then stop and wait for the caller. Do not invent, repeat, or role-play anything the caller says.\n\n${getVoiceGreeting(agentId, userName)}`,
         },
       });
     } catch (error) {
@@ -179,7 +183,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
             typeof message.openaiKey === "string"
               ? parseOpenAIKey(message.openaiKey)
               : null;
-          await startCall(key ?? undefined);
+          await startCall(key ?? undefined, message.userName);
           return;
         }
 

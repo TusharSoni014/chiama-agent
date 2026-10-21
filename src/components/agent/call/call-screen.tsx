@@ -25,6 +25,7 @@ import {
 } from "@/lib/openai-key-storage";
 import { useAgentStore } from "@/stores/agent-store";
 import { ChatErrorAlert } from "../chat-error-alert";
+import { DiaryForm } from "./diary-form";
 
 const STATUS_LABEL: Record<CallStatus, string> = {
   idle: "Ready",
@@ -61,6 +62,12 @@ export function CallScreen({
   const { status, isActive, transcript, error, start, end, dismissError } =
     useVoiceCall({ threadId, onSaved: onTranscriptSaved, persist });
   const setSettingsOpen = useAgentStore((state) => state.setSettingsOpen);
+  const selectedAgentId = useAgentStore((state) => state.selectedAgentId);
+  // The diary agent's call ends with a form to review, filled in from what was said.
+  const showDiaryForm =
+    selectedAgentId === "diary-agent" &&
+    status === "disconnected" &&
+    transcript.some((entry) => entry.role === "user");
   const askForKey =
     Boolean(error) &&
     !getStoredOpenAIKey() &&
@@ -152,6 +159,12 @@ export function CallScreen({
           </MessageScrollerProvider>
         )}
       </div>
+
+      {showDiaryForm && (
+        <div className="max-h-[55%] shrink-0 overflow-y-auto border-t px-4 py-4">
+          <DiaryForm transcript={transcript} />
+        </div>
+      )}
 
       <div className="flex shrink-0 justify-center border-t px-4 py-4">
         {isActive ? (
