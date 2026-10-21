@@ -1,11 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { getStoredOpenAIKey, OPENAI_KEY_HEADER } from "@/lib/openai-key-storage";
+import {
+  getStoredOpenAIKey,
+  OPENAI_KEY_HEADER,
+} from "@/lib/openai-key-storage";
 import type { VoiceRole } from "@/lib/voice-protocol";
 import { ChatErrorAlert } from "../chat-error-alert";
 
@@ -52,6 +56,12 @@ export function DiaryForm({ transcript }: DiaryFormProps) {
   const [error, setError] = useState<Error | null>(null);
   // Bumped by "Fill again" to run the extraction once more.
   const [attempt, setAttempt] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // The call just ended: bring the form into view so the loading is seen.
+  useEffect(() => {
+    formRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -85,17 +95,14 @@ export function DiaryForm({ transcript }: DiaryFormProps) {
 
   return (
     <form
+      ref={formRef}
       className="mx-auto flex w-full max-w-2xl flex-col gap-3"
       onSubmit={(event) => event.preventDefault()}
       aria-busy={isFilling}
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold tracking-tight">Meetup log</h3>
-        {isFilling ? (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Spinner /> Filling in from your call
-          </span>
-        ) : (
+        {!isFilling && (
           <Button
             type="button"
             variant="ghost"
@@ -115,39 +122,52 @@ export function DiaryForm({ transcript }: DiaryFormProps) {
         />
       )}
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        <span>
-          Who did you meet <span aria-hidden="true">*</span>
-        </span>
-        <Input
-          value={values.personName}
-          onChange={setField("personName")}
-          disabled={isFilling}
-          required
-          aria-invalid={!isFilling && !values.personName.trim()}
-          placeholder="Name of the person"
-        />
-      </label>
+      {isFilling ? (
+        <div
+          role="status"
+          className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-4"
+        >
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <Spinner /> Reading your call and writing up the log...
+          </p>
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : (
+        <>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            <span>
+              Who did you meet <span aria-hidden="true">*</span>
+            </span>
+            <Input
+              value={values.personName}
+              onChange={setField("personName")}
+              required
+              aria-invalid={!isFilling && !values.personName.trim()}
+              placeholder="Name of the person"
+            />
+          </label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        How long did you chat
-        <Input
-          value={values.duration}
-          onChange={setField("duration")}
-          disabled={isFilling}
-          placeholder="e.g. 20 minutes"
-        />
-      </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            How long did you chat
+            <Input
+              value={values.duration}
+              onChange={setField("duration")}
+              placeholder="e.g. 20 minutes"
+            />
+          </label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        What did you talk about
-        <Textarea
-          value={values.topics}
-          onChange={setField("topics")}
-          disabled={isFilling}
-          placeholder="Topics you covered"
-        />
-      </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            What did you talk about
+            <Textarea
+              value={values.topics}
+              onChange={setField("topics")}
+              placeholder="Topics you covered"
+            />
+          </label>
+        </>
+      )}
     </form>
   );
 }
