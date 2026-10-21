@@ -33,7 +33,14 @@ export function createVoiceHandler(agentId: ChatAgentId) {
     voice?.close?.();
   };
 
+  // Set once the agent has said goodbye and asked to end the call. Whatever the
+  // model says after that (it answers its own end-call tool) is never sent on.
+  let afterGoodbye = false;
+
   const send = (message: VoiceServerMessage) => {
+    if (afterGoodbye && (message.type === "audio" || message.type === "transcript")) {
+      return;
+    }
     if (!closed && socket?.readyState === 1) socket.send(JSON.stringify(message));
   };
 
@@ -74,6 +81,8 @@ export function createVoiceHandler(agentId: ChatAgentId) {
       instance.on("response.created", () => {
         agentResponding = true;
         clearCallerAudio();
+        // The reply to the end-call tool would only talk past the goodbye.
+        if (afterGoodbye) asRealtime(instance).sendEvent("response.cancel");
       });
       // The agent called its end-call tool after saying goodbye. The response
       // that carried the call is the last one worth playing: once it is done,
@@ -91,6 +100,7 @@ export function createVoiceHandler(agentId: ChatAgentId) {
         if (endRequested && !endSent) {
           endSent = true;
           send({ type: "end" });
+          afterGoodbye = true;
         }
       });
 

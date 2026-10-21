@@ -203,6 +203,7 @@ export function useVoiceCall({
             );
             break;
           case "transcript":
+            if (ending) break;
             addTranscript(event.id, event.role, event.text);
             break;
           case "end":
